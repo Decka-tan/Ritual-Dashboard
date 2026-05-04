@@ -322,7 +322,12 @@ function AdminDashboardModal({ open = true, onClose, onApproved, page = false })
     setLoading(true)
     setError('')
     try {
-      await apiRequest(`/api/admin/submissions/${id}/${action}`, { method: 'POST', token, timeoutMs: action === 'approve' ? 90000 : 15000 })
+      await apiRequest('/api/admin/review', {
+        method: 'POST',
+        token,
+        body: JSON.stringify({ id, action }),
+        timeoutMs: action === 'approve' ? 90000 : 15000,
+      })
       await loadSubmissions(token)
       onApproved?.()
     } catch (error) {

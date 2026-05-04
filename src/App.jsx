@@ -255,11 +255,11 @@ function SubmitDappModal({ open, onClose, onSubmit }) {
         {submitted && <p className="mt-4 rounded-xl border border-accent/30 bg-accent/10 px-4 py-3 text-sm text-accent">Submitted for approval. It will appear in Pre-Testnet after admin review.</p>}
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <button className="inline-flex flex-1 items-center justify-center rounded-xl bg-accent px-5 py-4 font-mono text-xs font-semibold uppercase tracking-wider text-black hover:bg-accent/90 disabled:cursor-wait disabled:opacity-60" type="button" onClick={submitDapp} disabled={isLoading}>
-            {isLoading ? 'Submitting...' : 'Submit dApp'}
+          <button className="inline-flex flex-1 items-center justify-center rounded-xl bg-accent px-5 py-4 font-mono text-xs font-semibold uppercase tracking-wider text-black hover:bg-accent/90 disabled:cursor-wait disabled:opacity-60" type="button" onClick={submitted ? onClose : submitDapp} disabled={isLoading}>
+            {submitted ? 'Done' : isLoading ? 'Submitting...' : 'Submit dApp'}
           </button>
           <button className="inline-flex flex-1 items-center justify-center rounded-xl border border-border px-5 py-4 font-mono text-xs font-semibold uppercase tracking-wider text-text-primary hover:border-accent hover:text-accent disabled:opacity-50" type="button" onClick={onClose} disabled={isLoading}>
-            Done
+            Close
           </button>
         </div>
       </section>

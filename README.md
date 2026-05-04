@@ -4,11 +4,11 @@ Community hub for Ritual dApps, deployed on Vercel with Supabase-backed admin ed
 
 ## What it does
 
-- **Official Testnet**: live list of Ritual Testnet dApps stored in Supabase `official_apps`.
+- **Official Testnet**: live list of Ritual Testnet dApps stored in Supabase `official_apps`, synced from the Google Sheet by Vercel Cron.
 - **Pre-Testnet**: approved community submissions stored in Supabase `submissions`.
 - **Admin route**: `/admin` for reviewing submissions and editing Official Testnet metadata.
 - **Preview images**: static cached previews in `public/previews/` plus Microlink-generated external screenshot URLs for newly approved/refreshed apps.
-- **Hero stats**: Official Testnet count, Pre-Testnet count, total builders without deduplication, and total dApps.
+- **Hero stats**: Official Testnet count, Pre-Testnet count, unique total builders, and total dApps.
 - **Hero background**: Mux HLS video background powered by `hls.js`.
 
 ## Stack
@@ -47,6 +47,9 @@ VITE_SUPABASE_URL="https://your-project.supabase.co"
 VITE_SUPABASE_ANON_KEY="your-anon-key"
 ADMIN_PASSWORD="your-admin-password"
 ADMIN_TOKEN_SECRET="optional-random-token-secret"
+CRON_SECRET="random-secret-used-for-sheet-sync"
+RITUAL_SHEET_ID="1-71yrtMqSRCTAvmshY2K_wDSYproX7GQFybKwkC5IFM"
+RITUAL_SHEET_GID="0"
 ```
 
 Notes:
@@ -54,6 +57,8 @@ Notes:
 - `SUPABASE_SERVICE_ROLE_KEY` must stay server-side only.
 - `.env` is ignored by git.
 - `ADMIN_TOKEN_SECRET` is optional but recommended. If omitted, the app falls back to the service role key or admin password for token signing.
+- `CRON_SECRET` protects the Google Sheet sync endpoint. Use the same value in Vercel Cron Authorization if you trigger it manually.
+- `RITUAL_SHEET_ID` and `RITUAL_SHEET_GID` are optional because defaults point to the current source sheet.
 
 ## Supabase setup
 
@@ -117,7 +122,7 @@ The project is Vercel-ready. `vercel.json` routes:
 }
 ```
 
-This keeps direct routes like `/admin` working as a React route while preserving `/api/*` serverless functions.
+This keeps direct routes like `/admin` working as a React route while preserving `/api/*` serverless functions. It also runs `/api/sync-sheet` every 6 hours through Vercel Cron.
 
 Deployment checklist:
 
@@ -135,6 +140,8 @@ Public:
 GET  /api/official-apps      list Official Testnet apps from Supabase
 GET  /api/submissions        list approved Pre-Testnet submissions, oldest-first
 POST /api/submissions        submit a new pending Pre-Testnet dApp
+GET  /api/sync-sheet         Vercel Cron: sync Google Sheet -> Supabase official_apps
+POST /api/sync-sheet         manual sync with Authorization: Bearer <CRON_SECRET>
 ```
 
 Admin:
@@ -179,6 +186,11 @@ Admin approve
   -> POST /api/admin/review
   -> Supabase submissions(status='approved', preview_url=Microlink URL)
 
+Vercel Cron, every 6 hours
+  -> GET /api/sync-sheet
+  -> Google Sheet CSV
+  -> Supabase official_apps upsert by site_number
+
 Public dashboard
   -> GET /api/official-apps
   -> GET /api/submissions
@@ -195,7 +207,13 @@ Original community source sheet:
 https://docs.google.com/spreadsheets/d/1-71yrtMqSRCTAvmshY2K_wDSYproX7GQFybKwkC5IFM/edit?gid=0#gid=0
 ```
 
-Current production flow does **not** depend on live Google Sheet sync. Official apps are editable in Supabase through `/admin`.
+Current production flow uses the Google Sheet as the Official Testnet source of truth. Vercel Cron syncs:
+
+```txt
+Google Sheet -> /api/sync-sheet -> Supabase official_apps -> /api/official-apps -> Dashboard
+```
+
+Admin edits are still available through `/admin`, but fields that exist in the sheet may be overwritten by the next cron sync. Use `/admin` mainly for cleanup, preview refreshes, or metadata not maintained in the sheet.
 
 ## Project structure
 

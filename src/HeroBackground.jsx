@@ -13,18 +13,56 @@ export function HeroBackground() {
 
     let hls
     let destroyed = false
+    let reverseFrame = 0
+    let lastReverseTick = 0
+
+    const stopReverseLoop = () => {
+      if (reverseFrame) {
+        window.cancelAnimationFrame(reverseFrame)
+        reverseFrame = 0
+      }
+      lastReverseTick = 0
+    }
 
     const playVideo = async () => {
       if (destroyed) return
+      stopReverseLoop()
       video.muted = true
       video.defaultMuted = true
       video.playsInline = true
+      video.playbackRate = 1
 
       try {
         await video.play()
       } catch {
         // Some browsers only allow autoplay after metadata/canplay is ready.
       }
+    }
+
+    const playReverseToStart = () => {
+      if (destroyed || !Number.isFinite(video.duration) || video.duration <= 0) return
+
+      video.pause()
+      stopReverseLoop()
+
+      const tick = (timestamp) => {
+        if (destroyed) return
+        if (!lastReverseTick) lastReverseTick = timestamp
+
+        const deltaSeconds = Math.min((timestamp - lastReverseTick) / 1000, 0.08)
+        lastReverseTick = timestamp
+        video.currentTime = Math.max(0, video.currentTime - deltaSeconds)
+
+        if (video.currentTime <= 0.04) {
+          video.currentTime = 0
+          playVideo()
+          return
+        }
+
+        reverseFrame = window.requestAnimationFrame(tick)
+      }
+
+      reverseFrame = window.requestAnimationFrame(tick)
     }
 
     const attachNativeHls = () => {
@@ -72,11 +110,14 @@ export function HeroBackground() {
 
     video.addEventListener('loadedmetadata', playVideo)
     video.addEventListener('canplay', playVideo)
+    video.addEventListener('ended', playReverseToStart)
 
     return () => {
       destroyed = true
+      stopReverseLoop()
       video.removeEventListener('loadedmetadata', playVideo)
       video.removeEventListener('canplay', playVideo)
+      video.removeEventListener('ended', playReverseToStart)
       if (hls) hls.destroy()
     }
   }, [])
@@ -89,7 +130,6 @@ export function HeroBackground() {
         autoPlay
         muted
         defaultMuted
-        loop
         playsInline
         preload="auto"
         poster={HERO_POSTER_URL}

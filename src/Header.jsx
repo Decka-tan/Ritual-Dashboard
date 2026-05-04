@@ -37,7 +37,7 @@ export function Header({ onSubmitClick }) {
           </a>
         ))}
         <button
-          className="rounded-full border border-accent/40 bg-accent px-4 py-2 text-black transition hover:bg-accent/90"
+          className="text-accent hover:text-accent/80"
           type="button"
           onClick={openSubmit}
         >
@@ -83,7 +83,7 @@ export function Header({ onSubmitClick }) {
                 </a>
               ))}
               <button
-                className="block w-full rounded-lg bg-accent px-3 py-2 text-left font-mono text-xs uppercase tracking-wider text-black hover:bg-accent/90"
+                className="block w-full rounded-lg px-3 py-2 text-left font-mono text-xs uppercase tracking-wider text-accent hover:text-accent/80"
                 type="button"
                 onClick={openSubmit}
               >

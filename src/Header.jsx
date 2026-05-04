@@ -41,7 +41,7 @@ export function Header({ onSubmitClick }) {
           type="button"
           onClick={openSubmit}
         >
-          Submit
+          SUBMIT
         </button>
       </nav>
 
@@ -87,7 +87,7 @@ export function Header({ onSubmitClick }) {
                 type="button"
                 onClick={openSubmit}
               >
-                Submit
+                SUBMIT
               </button>
             </nav>
           </div>

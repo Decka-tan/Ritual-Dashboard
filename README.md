@@ -8,6 +8,7 @@ Community hub for Ritual dApps, deployed on Vercel with Supabase-backed admin ed
 - **Pre-Testnet**: approved community submissions stored in Supabase `submissions`.
 - **Admin route**: `/admin` for reviewing submissions and editing Official Testnet metadata.
 - **Preview images**: static cached previews in `public/previews/` plus Microlink-generated external screenshot URLs for newly approved/refreshed apps.
+- **Hero stats**: Official Testnet count, Pre-Testnet count, total builders without deduplication, and total dApps.
 - **Hero background**: Mux HLS video background powered by `hls.js`.
 
 ## Stack
@@ -17,7 +18,6 @@ Community hub for Ritual dApps, deployed on Vercel with Supabase-backed admin ed
 - Vercel Serverless Functions under `api/`
 - Supabase REST API via service role key
 - Microlink screenshot URLs for approved/refreshed previews
-- Optional local Playwright scripts for legacy/static preview capture
 
 ## Run locally
 
@@ -197,16 +197,6 @@ https://docs.google.com/spreadsheets/d/1-71yrtMqSRCTAvmshY2K_wDSYproX7GQFybKwkC5
 
 Current production flow does **not** depend on live Google Sheet sync. Official apps are editable in Supabase through `/admin`.
 
-Legacy sheet sync still exists for manual/static maintenance:
-
-```bash
-npm run sync-sheet
-npm run capture-previews
-npm run refresh
-```
-
-These scripts rewrite static data/assets and are not the primary Vercel production flow.
-
 ## Project structure
 
 ```txt
@@ -220,7 +210,6 @@ src/data/apps.js             static Official Testnet fallback snapshot
 src/data/appDetails.js       static metadata fallback snapshot
 src/data/preTestnetApps.js   optional static Pre-Testnet fallback/archive
 public/previews/             cached static preview images
-scripts/                     legacy sync/capture/refresh utilities
 supabase-submissions.sql     Supabase schema + official app seed data
 ```
 
@@ -230,10 +219,6 @@ supabase-submissions.sql     Supabase schema + official app seed data
 npm run dev                         start Vite dev server
 npm run build                       production build
 npm run preview                     preview production build
-npm run sync-sheet                  legacy: sync Google Sheet into static data
-npm run capture-previews            legacy: capture static preview PNGs
-npm run capture-previews:force      legacy: recapture all previews
-npm run refresh                     legacy: sync + capture + build pipeline
 ```
 
 ## Security notes
@@ -246,6 +231,5 @@ npm run refresh                     legacy: sync + capture + build pipeline
 
 ## Known tradeoffs
 
-- Microlink screenshot URLs avoid iframe lag and Playwright-on-Vercel issues, but third-party screenshot capture may still show blocked/late-loading sites.
-- `server.cjs` and Playwright scripts are legacy VPS/Coolify/static-hosting support. Vercel production uses `api/*` + Supabase instead.
+- Microlink screenshot URLs avoid iframe lag and Vercel serverless browser issues, but third-party screenshot capture may still show blocked/late-loading sites.
 - Official app descriptions are manually editable. Automatic metadata fetching is not enabled yet to avoid low-quality scraped descriptions.

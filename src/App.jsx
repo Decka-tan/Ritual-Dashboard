@@ -742,11 +742,14 @@ function App() {
     { id: 'pretestnet', label: 'Pre-Testnet', count: communityApps.length },
   ]
 
+  const totalDapps = testnetApps.length + communityApps.length
+  const totalBuilders = enrichedApps.filter((app) => app.builder || app.builderHandle || app.builderUrl).length
+
   const statCards = [
     { label: 'Official Testnet', value: testnetApps.length },
     { label: 'Pre-Testnet', value: communityApps.length },
-    { label: 'Platforms', value: platforms.length - 1 },
-    { label: 'Visible Results', value: activeApps.length },
+    { label: 'Total Builders', value: totalBuilders },
+    { label: 'Total dApps', value: totalDapps },
   ]
 
   if (isAdminRoute) {

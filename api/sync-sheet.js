@@ -151,16 +151,25 @@ export default async function handler(req, res) {
     const apps = rowsToOfficialApps(parseCsv(csv))
     if (!apps.length) throw new Error('No valid official apps found in Google Sheet')
 
-    const rows = await supabaseFetch('/official_apps?on_conflict=site_number', {
-      method: 'POST',
-      headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
-      body: JSON.stringify(apps),
-    })
+    const existingRows = await supabaseFetch('/official_apps?select=site_number')
+    const existingSiteNumbers = new Set(existingRows.map((row) => Number(row.site_number)))
+    const newApps = apps.filter((app) => !existingSiteNumbers.has(Number(app.site_number)))
+
+    const rows = newApps.length
+      ? await supabaseFetch('/official_apps', {
+        method: 'POST',
+        headers: { Prefer: 'return=representation' },
+        body: JSON.stringify(newApps),
+      })
+      : []
 
     sendJson(res, 200, {
       ok: true,
+      mode: 'insert-only',
       source: csvUrl,
-      synced: rows.length,
+      scanned: apps.length,
+      inserted: rows.length,
+      skippedExisting: apps.length - rows.length,
       sample: rows.slice(0, 3).map((row) => ({ site_number: row.site_number, name: row.name, url: row.url })),
       syncedAt: new Date().toISOString(),
     })

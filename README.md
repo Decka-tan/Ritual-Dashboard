@@ -4,7 +4,7 @@ Community hub for Ritual dApps, deployed on Vercel with Supabase-backed admin ed
 
 ## What it does
 
-- **Official Testnet**: live list of Ritual Testnet dApps stored in Supabase `official_apps`, synced from the Google Sheet by Vercel Cron.
+- **Official Testnet**: live list of Ritual Testnet dApps stored in Supabase `official_apps`; Vercel Cron can import new Google Sheet rows without overwriting existing records.
 - **Pre-Testnet**: approved community submissions stored in Supabase `submissions`.
 - **Admin route**: `/admin` for reviewing submissions and editing Official Testnet metadata.
 - **Preview images**: static cached previews in `public/previews/` plus Microlink-generated external screenshot URLs for newly approved/refreshed apps.
@@ -189,7 +189,7 @@ Admin approve
 Vercel Cron, every 6 hours
   -> GET /api/sync-sheet
   -> Google Sheet CSV
-  -> Supabase official_apps upsert by site_number
+  -> Supabase official_apps insert-only by site_number
 
 Public dashboard
   -> GET /api/official-apps
@@ -213,7 +213,7 @@ Current production flow uses the Google Sheet as the Official Testnet source of 
 Google Sheet -> /api/sync-sheet -> Supabase official_apps -> /api/official-apps -> Dashboard
 ```
 
-Admin edits are still available through `/admin`, but fields that exist in the sheet may be overwritten by the next cron sync. Use `/admin` mainly for cleanup, preview refreshes, or metadata not maintained in the sheet.
+Admin edits are still available through `/admin`. The cron sync is insert-only: if a `site_number` already exists in Supabase, that row is skipped, so existing builder names, builder links, descriptions, previews, and manual edits are not overwritten by the sheet.
 
 ## Project structure
 

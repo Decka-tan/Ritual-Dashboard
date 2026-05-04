@@ -106,11 +106,11 @@ function makeId() {
 }
 
 async function handleApi(req, res, pathname) {
+  console.log(`[api] ${req.method} ${pathname}`)
   if (req.method === 'GET' && pathname === '/api/submissions') {
     const db = readDb()
     sendJson(res, 200, {
       approved: db.submissions.filter((item) => item.status === 'approved'),
-      pending: requireAdmin(req, { ...res, writeHead: () => {}, end: () => {} }) ? db.submissions.filter((item) => item.status === 'pending') : undefined,
     })
     return true
   }
@@ -224,8 +224,13 @@ function serveStatic(req, res, pathname) {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`)
   if (url.pathname.startsWith('/api/')) {
-    const handled = await handleApi(req, res, url.pathname)
-    if (!handled) sendJson(res, 404, { error: 'API route not found' })
+    try {
+      const handled = await handleApi(req, res, url.pathname)
+      if (!handled) sendJson(res, 404, { error: 'API route not found' })
+    } catch (error) {
+      console.error(`[api] ${req.method} ${url.pathname} failed`, error)
+      if (!res.headersSent) sendJson(res, 500, { error: 'Internal server error' })
+    }
     return
   }
   serveStatic(req, res, url.pathname)

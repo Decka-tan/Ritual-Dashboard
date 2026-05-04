@@ -1,0 +1,29 @@
+{
+  "name": "ritual-dashboard",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "sync-sheet": "node scripts/sync-sheet.cjs",
+    "add-pretestnet": "node scripts/add-pretestnet-app.cjs",
+    "capture-previews": "node scripts/capture-previews.cjs",
+    "capture-previews:force": "node scripts/capture-previews.cjs --force",
+    "capture-previews:problem": "node scripts/capture-previews.cjs --force --only=5,7,12,16,17,19,23,24,32",
+    "capture-previews:problem:fallback": "node scripts/capture-previews.cjs --force --only=5,7,12,16,17,19,23,24,32",
+    "refresh": "node scripts/refresh.cjs"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.18",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwindcss": "^4.1.18"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "playwright": "^1.57.0",
+    "vite": "^5.4.10"
+  }
+}

@@ -88,7 +88,7 @@ const fetchCreatorProfile = async (handle) => {
 }
 
 const apiRequest = async (path, options = {}) => {
-  const timeoutMs = options.timeoutMs || 15000
+  const timeoutMs = options.timeoutMs || 30000
   const controller = new AbortController()
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs)
 
@@ -267,7 +267,7 @@ function SubmitDappModal({ open, onClose, onSubmit }) {
   )
 }
 
-function AdminDashboardModal({ open, onClose, onApproved }) {
+function AdminDashboardModal({ open = true, onClose, onApproved, page = false }) {
   const [password, setPassword] = useState('')
   const [token, setToken] = useState(() => sessionStorage.getItem('ritual-admin-token') || '')
   const [submissions, setSubmissions] = useState([])
@@ -305,6 +305,7 @@ function AdminDashboardModal({ open, onClose, onApproved }) {
       const data = await apiRequest('/api/admin/login', {
         method: 'POST',
         body: JSON.stringify({ password }),
+        timeoutMs: 30000,
       })
       sessionStorage.setItem('ritual-admin-token', data.token)
       setToken(data.token)
@@ -336,16 +337,20 @@ function AdminDashboardModal({ open, onClose, onApproved }) {
   const rejected = submissions.filter((item) => item.status === 'rejected')
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center px-5 py-8">
-      <button className="absolute inset-0 bg-black/80 backdrop-blur-sm" type="button" onClick={onClose} aria-label="Close admin dashboard" />
-      <section className="relative z-10 max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-[2rem] border border-border bg-surface p-6 shadow-2xl md:p-8">
+    <div className={page ? 'min-h-screen bg-bg px-5 py-10 text-text-primary md:px-6 md:py-16' : 'fixed inset-0 z-[90] flex items-center justify-center px-5 py-8'}>
+      {!page && <button className="absolute inset-0 bg-black/80 backdrop-blur-sm" type="button" onClick={onClose} aria-label="Close admin dashboard" />}
+      <section className={page ? 'relative z-10 mx-auto w-full max-w-5xl rounded-[2rem] border border-border bg-surface p-6 shadow-2xl md:p-8' : 'relative z-10 max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-[2rem] border border-border bg-surface p-6 shadow-2xl md:p-8'}>
         <div className="flex items-start justify-between gap-4">
           <div>
             <span className="font-mono text-xs uppercase tracking-[0.22em] text-accent">Admin approval</span>
             <h2 className="mt-3 font-display text-4xl uppercase leading-none text-text-primary md:text-5xl">Submission Dashboard</h2>
             <p className="mt-4 text-sm leading-relaxed text-text-secondary">Approve only the community dApps you want to appear in Pre-Testnet.</p>
           </div>
-          <button className="rounded-full border border-border px-3 py-2 font-mono text-xs uppercase text-text-secondary hover:border-accent hover:text-accent" type="button" onClick={onClose}>Close</button>
+          {page ? (
+            <a className="rounded-full border border-border px-3 py-2 font-mono text-xs uppercase text-text-secondary hover:border-accent hover:text-accent" href="/">Dashboard</a>
+          ) : (
+            <button className="rounded-full border border-border px-3 py-2 font-mono text-xs uppercase text-text-secondary hover:border-accent hover:text-accent" type="button" onClick={onClose}>Close</button>
+          )}
         </div>
 
         {!token ? (
@@ -501,8 +506,8 @@ function App() {
   const [tag, setTag] = useState('All')
   const [activeSection, setActiveSection] = useState('testnet')
   const [submitOpen, setSubmitOpen] = useState(false)
-  const [adminOpen, setAdminOpen] = useState(false)
   const [approvedApps, setApprovedApps] = useState([])
+  const isAdminRoute = window.location.pathname === '/admin'
 
   const loadApprovedApps = async () => {
     try {
@@ -581,11 +586,14 @@ function App() {
     { label: 'Visible Results', value: activeApps.length },
   ]
 
+  if (isAdminRoute) {
+    return <AdminDashboardModal page onApproved={loadApprovedApps} />
+  }
+
   return (
     <div className="min-h-screen bg-bg text-text-primary" id="dashboard">
-      <Header onSubmitClick={() => setSubmitOpen(true)} onAdminClick={() => setAdminOpen(true)} />
+      <Header onSubmitClick={() => setSubmitOpen(true)} />
       <SubmitDappModal open={submitOpen} onClose={() => setSubmitOpen(false)} onSubmit={submitCommunityApp} />
-      <AdminDashboardModal open={adminOpen} onClose={() => setAdminOpen(false)} onApproved={loadApprovedApps} />
       <section className="relative min-h-screen overflow-hidden border-b border-border px-5 py-10 md:px-6 md:py-16">
         <HeroBackground />
 

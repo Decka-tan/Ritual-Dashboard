@@ -6,17 +6,13 @@ const navLinks = [
   { label: 'Source Sheet', href: 'https://docs.google.com/spreadsheets/d/1-71yrtMqSRCTAvmshY2K_wDSYproX7GQFybKwkC5IFM/edit?gid=0#gid=0', external: true },
 ]
 
-export function Header({ onSubmitClick, onAdminClick }) {
+export function Header({ onSubmitClick }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const closeMenu = () => setMobileMenuOpen(false)
   const openSubmit = () => {
     closeMenu()
     onSubmitClick?.()
-  }
-  const openAdmin = () => {
-    closeMenu()
-    onAdminClick?.()
   }
 
   return (
@@ -41,13 +37,6 @@ export function Header({ onSubmitClick, onAdminClick }) {
             {link.label}
           </a>
         ))}
-        <button
-          className="hover:text-accent"
-          type="button"
-          onClick={openAdmin}
-        >
-          Admin
-        </button>
         <button
           className="rounded-full border border-accent/40 bg-accent/10 px-4 py-2 text-accent transition hover:bg-accent hover:text-black"
           type="button"
@@ -95,13 +84,6 @@ export function Header({ onSubmitClick, onAdminClick }) {
                   {link.label}
                 </a>
               ))}
-              <button
-                className="block w-full rounded-lg px-3 py-2 text-left font-mono text-xs uppercase tracking-wider text-text-primary hover:text-accent"
-                type="button"
-                onClick={openAdmin}
-              >
-                Admin
-              </button>
               <button
                 className="block w-full rounded-lg px-3 py-2 text-left font-mono text-xs uppercase tracking-wider text-accent hover:bg-accent hover:text-black"
                 type="button"

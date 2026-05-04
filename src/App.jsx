@@ -119,7 +119,7 @@ const apiRequest = async (path, options = {}) => {
 
 function BrowserPreview({ app }) {
   const [imageFailed, setImageFailed] = useState(false)
-  const previewImage = `/previews/${app.slug}.png`
+  const previewImage = app.preview || `/previews/${app.slug}.png`
 
   useEffect(() => {
     setImageFailed(false)
@@ -321,7 +321,7 @@ function AdminDashboardModal({ open, onClose, onApproved }) {
     setLoading(true)
     setError('')
     try {
-      await apiRequest(`/api/admin/submissions/${id}/${action}`, { method: 'POST', token })
+      await apiRequest(`/api/admin/submissions/${id}/${action}`, { method: 'POST', token, timeoutMs: action === 'approve' ? 90000 : 15000 })
       await loadSubmissions(token)
       onApproved?.()
     } catch (error) {

@@ -19,6 +19,29 @@ npm run build
 npm run preview
 ```
 
+## Production server / Coolify
+
+This project now includes a small Node server for community submissions and admin approval.
+
+Coolify settings:
+
+```txt
+Build Pack: Nixpacks
+Install Command: npm install
+Build Command: npm run build
+Start Command: npm start
+Port: 3000
+```
+
+Environment variables:
+
+```txt
+PORT=3000
+ADMIN_PASSWORD=Sopmod123
+```
+
+Use a persistent volume for `data/` on Coolify if you do not want submissions to reset across redeploys.
+
 ## Data source
 
 Google Sheet:
@@ -55,37 +78,43 @@ RITUAL_SHEET_CSV_URL="https://docs.google.com/spreadsheets/d/.../export?format=c
 
 The sheet must be public/readable, or the CSV export will return an error.
 
-## Add Pre-Testnet community dApps
+## Community Pre-Testnet submissions
 
-Manual file:
+The header has two controls:
 
-```js
-// src/data/preTestnetApps.js
-export const preTestnetApps = [
-  {
-    name: "Example dApp",
-    url: "https://example.com/",
-    builder: "Creator Name",
-    builderUrl: "https://x.com/creator/status/123",
-    about: "Short description of what the dApp does."
-  }
-]
+- **Submit dApp**: public community form. Submitted dApps are saved as `pending` and do not appear publicly yet.
+- **Admin**: password-protected approval dashboard. Only approved entries appear in the Pre-Testnet section.
+
+Default admin password:
+
+```txt
+Sopmod123
 ```
 
-Helper command using an X/Twitter post and vxTwitter-compatible API:
+Recommended production override:
 
 ```bash
-npm run add-pretestnet -- --x=https://x.com/creator/status/123 --url=https://example.com/ --name="Example dApp" --about="Short description"
+ADMIN_PASSWORD="your-strong-password"
 ```
 
-If the tweet exposes a website URL through vxTwitter, `--url` can be omitted. If no website is detected, pass `--url` manually.
+Submissions are stored on the VPS in:
 
-After adding entries:
-
-```bash
-npm run capture-previews
-npm run build
+```txt
+data/submissions.json
 ```
+
+API routes:
+
+```txt
+POST /api/submissions                 public submit
+GET  /api/submissions                 public approved list
+POST /api/admin/login                 admin login
+GET  /api/admin/submissions           admin list all
+POST /api/admin/submissions/:id/approve
+POST /api/admin/submissions/:id/reject
+```
+
+Static/manual archive entries can still be kept in `src/data/preTestnetApps.js`, but normal community submissions should go through the approval dashboard.
 
 ## VPS cron example
 

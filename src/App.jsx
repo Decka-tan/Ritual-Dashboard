@@ -87,6 +87,21 @@ const fetchCreatorProfile = async (handle) => {
   return { handle: cleanHandle, displayName: `@${cleanHandle}` }
 }
 
+const apiRequest = async (path, options = {}) => {
+  const response = await fetch(path, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
+      ...(options.headers || {}),
+    },
+    ...options,
+  })
+
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) throw new Error(data.error || 'Request failed')
+  return data
+}
+
 function BrowserPreview({ app }) {
   const [imageFailed, setImageFailed] = useState(false)
   const previewImage = `/previews/${app.slug}.png`
@@ -156,10 +171,10 @@ function SubmitDappModal({ open, onClose, onSubmit }) {
       setLoadingStep('Fetching creator profile...')
       const creatorProfile = await fetchCreatorProfile(handle)
 
-      setLoadingStep('Adding dApp to Pre-Testnet...')
-      await sleep(500)
+      setLoadingStep('Sending submission for admin approval...')
+      await sleep(350)
 
-      onSubmit({
+      await onSubmit({
         name,
         url: normalizeUrl(url),
         builder: creatorProfile.displayName || `@${handle}`,
@@ -171,9 +186,9 @@ function SubmitDappModal({ open, onClose, onSubmit }) {
       setForm({ name: '', url: '', creator: '', about: '' })
       setSubmitted(true)
       setLoadingStep('')
-    } catch {
+    } catch (error) {
       setLoadingStep('')
-      setError('Submission failed. Please check the dApp URL and Creator X handle, then try again.')
+      setError(error.message || 'Submission failed. Please check the dApp URL and Creator X handle, then try again.')
     }
   }
 
@@ -188,7 +203,7 @@ function SubmitDappModal({ open, onClose, onSubmit }) {
             <span className="font-mono text-xs uppercase tracking-[0.22em] text-accent">Community submission</span>
             <h2 className="mt-3 font-display text-4xl uppercase leading-none text-text-primary md:text-5xl">Submit Pre-Testnet dApp</h2>
             <p className="mt-4 text-sm leading-relaxed text-text-secondary">
-              Submit a community dApp. The dashboard fetches the creator display name, then adds it to the Pre-Testnet section using the same preview system as official apps.
+              Submit a community dApp for review. It appears in Pre-Testnet only after admin approval.
             </p>
           </div>
           <button className="rounded-full border border-border px-3 py-2 font-mono text-xs uppercase text-text-secondary hover:border-accent hover:text-accent" type="button" onClick={onClose} disabled={isLoading}>
@@ -222,7 +237,7 @@ function SubmitDappModal({ open, onClose, onSubmit }) {
           </div>
         )}
         {error && <p className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</p>}
-        {submitted && <p className="mt-4 rounded-xl border border-accent/30 bg-accent/10 px-4 py-3 text-sm text-accent">Submitted. Your dApp is now visible in Pre-Testnet.</p>}
+        {submitted && <p className="mt-4 rounded-xl border border-accent/30 bg-accent/10 px-4 py-3 text-sm text-accent">Submitted for approval. It will appear in Pre-Testnet after admin review.</p>}
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <button className="inline-flex flex-1 items-center justify-center rounded-xl bg-accent px-5 py-4 font-mono text-xs font-semibold uppercase tracking-wider text-black hover:bg-accent/90 disabled:cursor-wait disabled:opacity-60" type="button" onClick={submitDapp} disabled={isLoading}>
@@ -232,6 +247,140 @@ function SubmitDappModal({ open, onClose, onSubmit }) {
             Done
           </button>
         </div>
+      </section>
+    </div>
+  )
+}
+
+function AdminDashboardModal({ open, onClose, onApproved }) {
+  const [password, setPassword] = useState('')
+  const [token, setToken] = useState(() => sessionStorage.getItem('ritual-admin-token') || '')
+  const [submissions, setSubmissions] = useState([])
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const loadSubmissions = async (adminToken = token) => {
+    if (!adminToken) return
+    setLoading(true)
+    setError('')
+    try {
+      const data = await apiRequest('/api/admin/submissions', { token: adminToken })
+      setSubmissions(data.submissions || [])
+    } catch (error) {
+      setError(error.message || 'Failed to load submissions')
+      if (error.message === 'Unauthorized') {
+        sessionStorage.removeItem('ritual-admin-token')
+        setToken('')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (open && token) loadSubmissions(token)
+  }, [open, token])
+
+  if (!open) return null
+
+  const login = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const data = await apiRequest('/api/admin/login', {
+        method: 'POST',
+        body: JSON.stringify({ password }),
+      })
+      sessionStorage.setItem('ritual-admin-token', data.token)
+      setToken(data.token)
+      setPassword('')
+      await loadSubmissions(data.token)
+    } catch (error) {
+      setError(error.message || 'Login failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const review = async (id, action) => {
+    setLoading(true)
+    setError('')
+    try {
+      await apiRequest(`/api/admin/submissions/${id}/${action}`, { method: 'POST', token })
+      await loadSubmissions(token)
+      onApproved?.()
+    } catch (error) {
+      setError(error.message || 'Review failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const pending = submissions.filter((item) => item.status === 'pending')
+  const approved = submissions.filter((item) => item.status === 'approved')
+  const rejected = submissions.filter((item) => item.status === 'rejected')
+
+  return (
+    <div className="fixed inset-0 z-[90] flex items-center justify-center px-5 py-8">
+      <button className="absolute inset-0 bg-black/80 backdrop-blur-sm" type="button" onClick={onClose} aria-label="Close admin dashboard" />
+      <section className="relative z-10 max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-[2rem] border border-border bg-surface p-6 shadow-2xl md:p-8">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <span className="font-mono text-xs uppercase tracking-[0.22em] text-accent">Admin approval</span>
+            <h2 className="mt-3 font-display text-4xl uppercase leading-none text-text-primary md:text-5xl">Submission Dashboard</h2>
+            <p className="mt-4 text-sm leading-relaxed text-text-secondary">Approve only the community dApps you want to appear in Pre-Testnet.</p>
+          </div>
+          <button className="rounded-full border border-border px-3 py-2 font-mono text-xs uppercase text-text-secondary hover:border-accent hover:text-accent" type="button" onClick={onClose}>Close</button>
+        </div>
+
+        {!token ? (
+          <div className="mt-8 grid gap-4 rounded-2xl border border-border bg-bg/70 p-5">
+            <label className="grid gap-2 font-mono text-xs uppercase tracking-[0.18em] text-text-secondary">
+              Admin password
+              <input className="rounded-xl border border-border bg-bg px-4 py-3 font-sans text-sm normal-case tracking-normal text-text-primary outline-none focus:border-accent" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password" onKeyDown={(event) => event.key === 'Enter' && login()} />
+            </label>
+            <button className="rounded-xl bg-accent px-5 py-4 font-mono text-xs font-semibold uppercase tracking-wider text-black hover:bg-accent/90 disabled:opacity-60" type="button" onClick={login} disabled={loading}>{loading ? 'Logging in...' : 'Login'}</button>
+          </div>
+        ) : (
+          <div className="mt-8">
+            <div className="mb-5 flex flex-wrap gap-3 font-mono text-xs uppercase tracking-[0.16em] text-text-secondary">
+              <span className="rounded-full border border-accent/30 bg-accent/10 px-3 py-1.5 text-accent">Pending {pending.length}</span>
+              <span className="rounded-full border border-border px-3 py-1.5">Approved {approved.length}</span>
+              <span className="rounded-full border border-border px-3 py-1.5">Rejected {rejected.length}</span>
+              <button className="rounded-full border border-border px-3 py-1.5 hover:border-accent hover:text-accent" type="button" onClick={() => loadSubmissions(token)} disabled={loading}>Refresh</button>
+            </div>
+
+            {pending.length ? (
+              <div className="grid gap-4">
+                {pending.map((item) => (
+                  <article key={item.id} className="rounded-2xl border border-border bg-bg/70 p-5">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="min-w-0">
+                        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-secondary">{new Date(item.submittedAt).toLocaleString()}</span>
+                        <h3 className="mt-2 font-display text-3xl uppercase leading-none text-text-primary">{item.name}</h3>
+                        <p className="mt-3 text-sm leading-relaxed text-text-secondary">{item.about}</p>
+                        <div className="mt-4 flex flex-wrap gap-2 font-mono text-xs">
+                          <a className="rounded-full border border-border px-3 py-1.5 text-text-secondary hover:border-accent hover:text-accent" href={item.url} target="_blank" rel="noreferrer">Open website</a>
+                          {item.builderUrl && <a className="rounded-full border border-accent/30 px-3 py-1.5 text-accent hover:bg-accent hover:text-black" href={item.builderUrl} target="_blank" rel="noreferrer">{item.builder}</a>}
+                        </div>
+                      </div>
+                      <div className="flex min-w-44 flex-col gap-2">
+                        <button className="rounded-xl bg-accent px-4 py-3 font-mono text-xs font-semibold uppercase text-black hover:bg-accent/90 disabled:opacity-60" type="button" onClick={() => review(item.id, 'approve')} disabled={loading}>Approve</button>
+                        <button className="rounded-xl border border-red-500/40 px-4 py-3 font-mono text-xs font-semibold uppercase text-red-200 hover:bg-red-500/10 disabled:opacity-60" type="button" onClick={() => review(item.id, 'reject')} disabled={loading}>Reject</button>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-border bg-bg/70 p-8 text-center">
+                <p className="font-mono text-xs uppercase tracking-[0.2em] text-text-secondary">No pending submissions</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {error && <p className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</p>}
       </section>
     </div>
   )
@@ -320,9 +469,9 @@ function AppSection({ id, eyebrow, title, description, apps }) {
       ) : (
         <div className="rounded-3xl border border-dashed border-border bg-surface/70 p-8 text-center">
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-text-secondary">No entries yet</p>
-          <h3 className="mt-3 font-display text-3xl uppercase text-text-primary">Community submissions will appear here</h3>
+          <h3 className="mt-3 font-display text-3xl uppercase text-text-primary">Approved community dApps will appear here</h3>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-text-secondary">
-            Add a pre-testnet dApp with its name, website link, and X creator handle. The dashboard fetches the display name and live preview automatically.
+            Submitted pre-testnet dApps stay hidden until admin approval.
           </p>
         </div>
       )}
@@ -336,23 +485,27 @@ function App() {
   const [tag, setTag] = useState('All')
   const [activeSection, setActiveSection] = useState('testnet')
   const [submitOpen, setSubmitOpen] = useState(false)
-  const [submittedApps, setSubmittedApps] = useState(() => {
+  const [adminOpen, setAdminOpen] = useState(false)
+  const [approvedApps, setApprovedApps] = useState([])
+
+  const loadApprovedApps = async () => {
     try {
-      return JSON.parse(localStorage.getItem('ritual-pretestnet-submissions') || '[]')
+      const data = await apiRequest('/api/submissions')
+      setApprovedApps(data.approved || [])
     } catch {
-      return []
+      setApprovedApps([])
     }
-  })
+  }
 
   useEffect(() => {
-    localStorage.setItem('ritual-pretestnet-submissions', JSON.stringify(submittedApps))
-  }, [submittedApps])
+    loadApprovedApps()
+  }, [])
 
-  const addSubmittedApp = (app) => {
-    setSubmittedApps((current) => [{ ...app, submittedAt: new Date().toISOString() }, ...current])
-    setActiveSection('pretestnet')
-    setSubmitOpen(false)
-    window.setTimeout(() => document.getElementById('apps')?.scrollIntoView({ behavior: 'smooth' }), 50)
+  const submitCommunityApp = async (app) => {
+    await apiRequest('/api/submissions', {
+      method: 'POST',
+      body: JSON.stringify(app),
+    })
   }
 
   const testnetApps = useMemo(() => apps.map((app, index) => {
@@ -371,7 +524,7 @@ function App() {
     }
   }), [])
 
-  const communityApps = useMemo(() => [...submittedApps, ...preTestnetApps].map((app, index) => ({
+  const communityApps = useMemo(() => [...approvedApps, ...preTestnetApps].map((app, index) => ({
     ...app,
     id: index + 1,
     section: 'pretestnet',
@@ -380,7 +533,7 @@ function App() {
     domain: getDomain(app.url),
     platform: getPlatform(app.url),
     tag: getTag(app.name),
-  })), [submittedApps])
+  })), [approvedApps])
 
   const enrichedApps = useMemo(() => [...testnetApps, ...communityApps], [testnetApps, communityApps])
   const platforms = useMemo(() => ['All', ...new Set(enrichedApps.map(app => app.platform))], [enrichedApps])
@@ -414,8 +567,9 @@ function App() {
 
   return (
     <div className="min-h-screen bg-bg text-text-primary" id="dashboard">
-      <Header onSubmitClick={() => setSubmitOpen(true)} />
-      <SubmitDappModal open={submitOpen} onClose={() => setSubmitOpen(false)} onSubmit={addSubmittedApp} />
+      <Header onSubmitClick={() => setSubmitOpen(true)} onAdminClick={() => setAdminOpen(true)} />
+      <SubmitDappModal open={submitOpen} onClose={() => setSubmitOpen(false)} onSubmit={submitCommunityApp} />
+      <AdminDashboardModal open={adminOpen} onClose={() => setAdminOpen(false)} onApproved={loadApprovedApps} />
       <section className="relative min-h-screen overflow-hidden border-b border-border px-5 py-10 md:px-6 md:py-16">
         <HeroBackground />
 
@@ -514,7 +668,7 @@ function App() {
           title={activeSection === 'testnet' ? 'Testnet live' : 'Pre-Testnet'}
           description={activeSection === 'testnet'
             ? 'Apps listed from the official community sheet after Ritual Testnet went live. This section is updated by the sheet sync pipeline.'
-            : 'Community dApps and experiments built before the live testnet list. Add name, creator X handle, and website link to keep the hub complete.'}
+            : 'Approved community dApps and experiments built before the live testnet list.'}
           apps={activeApps}
         />
       </section>

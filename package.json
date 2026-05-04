@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "start": "node server.cjs",
     "sync-sheet": "node scripts/sync-sheet.cjs",
     "add-pretestnet": "node scripts/add-pretestnet-app.cjs",
     "capture-previews": "node scripts/capture-previews.cjs",

@@ -99,9 +99,47 @@ export function toDbSubmission(body = {}) {
   }
 }
 
+export function toClientOfficialApp(row = {}) {
+  return {
+    id: row.id,
+    siteNumber: Number(row.site_number || 0),
+    name: row.name || '',
+    url: row.url || '',
+    builder: row.creator_name || row.builder || 'Unknown',
+    builderHandle: row.creator_handle || '',
+    builderUrl: row.creator_url || '',
+    about: row.description || row.about || '',
+    preview: row.preview_url || '',
+    previewStatus: row.preview_status || 'pending',
+    source: row.source || 'admin',
+    updatedAt: row.updated_at || '',
+  }
+}
+
+export function toDbOfficialApp(body = {}) {
+  return {
+    site_number: Number(body.siteNumber || body.site_number || 0),
+    name: cleanString(body.name, 160),
+    url: normalizeUrl(body.url),
+    description: cleanString(body.about || body.description, 900),
+    creator_name: cleanString(body.builder || body.creator_name, 140) || 'Unknown',
+    creator_handle: cleanString(body.builderHandle || body.creator_handle, 100),
+    creator_url: normalizeUrl(body.builderUrl || body.creator_url),
+    preview_url: normalizeUrl(body.preview || body.preview_url),
+    preview_status: cleanString(body.previewStatus || body.preview_status || 'pending', 40),
+    source: cleanString(body.source || 'admin', 40),
+    updated_at: new Date().toISOString(),
+  }
+}
+
 export async function listSubmissions(filter = '', order = 'created_at.desc') {
   const rows = await supabaseFetch(`/submissions?select=*&order=${order}${filter}`)
   return rows.map(toClientSubmission)
+}
+
+export async function listOfficialApps() {
+  const rows = await supabaseFetch('/official_apps?select=*&order=site_number.asc')
+  return rows.map(toClientOfficialApp)
 }
 
 function base64url(input) {

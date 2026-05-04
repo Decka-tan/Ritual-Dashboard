@@ -271,6 +271,9 @@ function AdminDashboardModal({ open = true, onClose, onApproved, page = false })
   const [password, setPassword] = useState('')
   const [token, setToken] = useState(() => sessionStorage.getItem('ritual-admin-token') || '')
   const [submissions, setSubmissions] = useState([])
+  const [officialApps, setOfficialApps] = useState([])
+  const [editingOfficial, setEditingOfficial] = useState({})
+  const [adminTab, setAdminTab] = useState('submissions')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -292,8 +295,32 @@ function AdminDashboardModal({ open = true, onClose, onApproved, page = false })
     }
   }
 
+  const loadOfficialApps = async (adminToken = token) => {
+    if (!adminToken) return
+    setLoading(true)
+    setError('')
+    try {
+      const data = await apiRequest('/api/admin/official-apps', { token: adminToken })
+      const apps = data.apps || []
+      setOfficialApps(apps)
+      setEditingOfficial(Object.fromEntries(apps.map((item) => [item.id, { ...item }])))
+    } catch (error) {
+      setError(error.message || 'Failed to load official apps')
+      if (error.message === 'Unauthorized') {
+        sessionStorage.removeItem('ritual-admin-token')
+        setToken('')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadAdminData = async (adminToken = token) => {
+    await Promise.all([loadSubmissions(adminToken), loadOfficialApps(adminToken)])
+  }
+
   useEffect(() => {
-    if (open && token) loadSubmissions(token)
+    if (open && token) loadAdminData(token)
   }, [open, token])
 
   if (!open) return null
@@ -310,7 +337,7 @@ function AdminDashboardModal({ open = true, onClose, onApproved, page = false })
       sessionStorage.setItem('ritual-admin-token', data.token)
       setToken(data.token)
       setPassword('')
-      await loadSubmissions(data.token)
+      await loadAdminData(data.token)
     } catch (error) {
       setError(error.message || 'Login failed')
     } finally {
@@ -332,6 +359,55 @@ function AdminDashboardModal({ open = true, onClose, onApproved, page = false })
       onApproved?.()
     } catch (error) {
       setError(error.message || 'Review failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const updateOfficialDraft = (id, field, value) => {
+    setEditingOfficial((current) => ({
+      ...current,
+      [id]: {
+        ...(current[id] || {}),
+        [field]: value,
+      },
+    }))
+  }
+
+  const saveOfficialApp = async (id) => {
+    const draft = editingOfficial[id]
+    if (!draft) return
+    setLoading(true)
+    setError('')
+    try {
+      await apiRequest('/api/admin/official-apps', {
+        method: 'PATCH',
+        token,
+        body: JSON.stringify(draft),
+      })
+      await loadOfficialApps(token)
+      onApproved?.()
+    } catch (error) {
+      setError(error.message || 'Failed to save official app')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const refreshOfficialPreview = async (id) => {
+    setLoading(true)
+    setError('')
+    try {
+      await apiRequest('/api/admin/official-apps', {
+        method: 'POST',
+        token,
+        body: JSON.stringify({ id, action: 'refresh-preview' }),
+        timeoutMs: 30000,
+      })
+      await loadOfficialApps(token)
+      onApproved?.()
+    } catch (error) {
+      setError(error.message || 'Failed to refresh official preview')
     } finally {
       setLoading(false)
     }
@@ -369,37 +445,97 @@ function AdminDashboardModal({ open = true, onClose, onApproved, page = false })
         ) : (
           <div className="mt-8">
             <div className="mb-5 flex flex-wrap gap-3 font-mono text-xs uppercase tracking-[0.16em] text-text-secondary">
-              <span className="rounded-full border border-accent/30 bg-accent/10 px-3 py-1.5 text-accent">Pending {pending.length}</span>
+              <button className={`rounded-full border px-3 py-1.5 ${adminTab === 'submissions' ? 'border-accent/30 bg-accent/10 text-accent' : 'border-border hover:border-accent hover:text-accent'}`} type="button" onClick={() => setAdminTab('submissions')}>Submissions {pending.length}</button>
+              <button className={`rounded-full border px-3 py-1.5 ${adminTab === 'official' ? 'border-accent/30 bg-accent/10 text-accent' : 'border-border hover:border-accent hover:text-accent'}`} type="button" onClick={() => setAdminTab('official')}>Official Testnet {officialApps.length}</button>
               <span className="rounded-full border border-border px-3 py-1.5">Approved {approved.length}</span>
               <span className="rounded-full border border-border px-3 py-1.5">Rejected {rejected.length}</span>
-              <button className="rounded-full border border-border px-3 py-1.5 hover:border-accent hover:text-accent" type="button" onClick={() => loadSubmissions(token)} disabled={loading}>Refresh</button>
+              <button className="rounded-full border border-border px-3 py-1.5 hover:border-accent hover:text-accent" type="button" onClick={() => loadAdminData(token)} disabled={loading}>Refresh</button>
             </div>
 
-            {pending.length ? (
-              <div className="grid gap-4">
-                {pending.map((item) => (
-                  <article key={item.id} className="rounded-2xl border border-border bg-bg/70 p-5">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                      <div className="min-w-0">
-                        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-secondary">{new Date(item.submittedAt).toLocaleString()}</span>
-                        <h3 className="mt-2 font-display text-3xl uppercase leading-none text-text-primary">{item.name}</h3>
-                        <p className="mt-3 text-sm leading-relaxed text-text-secondary">{item.about}</p>
-                        <div className="mt-4 flex flex-wrap gap-2 font-mono text-xs">
-                          <a className="rounded-full border border-border px-3 py-1.5 text-text-secondary hover:border-accent hover:text-accent" href={item.url} target="_blank" rel="noreferrer">Open website</a>
-                          {item.builderUrl && <a className="rounded-full border border-accent/30 px-3 py-1.5 text-accent hover:bg-accent hover:text-black" href={item.builderUrl} target="_blank" rel="noreferrer">{item.builder}</a>}
+            {adminTab === 'submissions' ? (
+              pending.length ? (
+                <div className="grid gap-4">
+                  {pending.map((item) => (
+                    <article key={item.id} className="rounded-2xl border border-border bg-bg/70 p-5">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="min-w-0">
+                          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-secondary">{new Date(item.submittedAt).toLocaleString()}</span>
+                          <h3 className="mt-2 font-display text-3xl uppercase leading-none text-text-primary">{item.name}</h3>
+                          <p className="mt-3 text-sm leading-relaxed text-text-secondary">{item.about}</p>
+                          <div className="mt-4 flex flex-wrap gap-2 font-mono text-xs">
+                            <a className="rounded-full border border-border px-3 py-1.5 text-text-secondary hover:border-accent hover:text-accent" href={item.url} target="_blank" rel="noreferrer">Open website</a>
+                            {item.builderUrl && <a className="rounded-full border border-accent/30 px-3 py-1.5 text-accent hover:bg-accent hover:text-black" href={item.builderUrl} target="_blank" rel="noreferrer">{item.builder}</a>}
+                          </div>
+                        </div>
+                        <div className="flex min-w-44 flex-col gap-2">
+                          <button className="rounded-xl bg-accent px-4 py-3 font-mono text-xs font-semibold uppercase text-black hover:bg-accent/90 disabled:opacity-60" type="button" onClick={() => review(item.id, 'approve')} disabled={loading}>Approve</button>
+                          <button className="rounded-xl border border-red-500/40 px-4 py-3 font-mono text-xs font-semibold uppercase text-red-200 hover:bg-red-500/10 disabled:opacity-60" type="button" onClick={() => review(item.id, 'reject')} disabled={loading}>Reject</button>
                         </div>
                       </div>
-                      <div className="flex min-w-44 flex-col gap-2">
-                        <button className="rounded-xl bg-accent px-4 py-3 font-mono text-xs font-semibold uppercase text-black hover:bg-accent/90 disabled:opacity-60" type="button" onClick={() => review(item.id, 'approve')} disabled={loading}>Approve</button>
-                        <button className="rounded-xl border border-red-500/40 px-4 py-3 font-mono text-xs font-semibold uppercase text-red-200 hover:bg-red-500/10 disabled:opacity-60" type="button" onClick={() => review(item.id, 'reject')} disabled={loading}>Reject</button>
-                      </div>
-                    </div>
-                  </article>
-                ))}
-              </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-border bg-bg/70 p-8 text-center">
+                  <p className="font-mono text-xs uppercase tracking-[0.2em] text-text-secondary">No pending submissions</p>
+                </div>
+              )
             ) : (
-              <div className="rounded-2xl border border-dashed border-border bg-bg/70 p-8 text-center">
-                <p className="font-mono text-xs uppercase tracking-[0.2em] text-text-secondary">No pending submissions</p>
+              <div className="grid gap-4">
+                {officialApps.map((item) => {
+                  const draft = editingOfficial[item.id] || item
+                  return (
+                    <article key={item.id} className="rounded-2xl border border-border bg-bg/70 p-5">
+                      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div>
+                          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">Official #{String(draft.siteNumber || item.siteNumber).padStart(2, '0')}</span>
+                          <h3 className="mt-2 font-display text-3xl uppercase leading-none text-text-primary">{draft.name || item.name}</h3>
+                        </div>
+                        <div className="flex flex-wrap gap-2 font-mono text-xs">
+                          <a className="rounded-full border border-border px-3 py-1.5 text-text-secondary hover:border-accent hover:text-accent" href={draft.url} target="_blank" rel="noreferrer">Open website</a>
+                          <button className="rounded-full border border-border px-3 py-1.5 text-text-secondary hover:border-accent hover:text-accent disabled:opacity-50" type="button" onClick={() => refreshOfficialPreview(item.id)} disabled={loading}>Refresh preview</button>
+                          <button className="rounded-full border border-accent/40 bg-accent px-3 py-1.5 text-black hover:bg-accent/90 disabled:opacity-50" type="button" onClick={() => saveOfficialApp(item.id)} disabled={loading}>Save</button>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-3 md:grid-cols-[0.35fr_1fr_1fr]">
+                        <label className="grid gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-text-secondary">
+                          Site #
+                          <input className="rounded-xl border border-border bg-bg px-3 py-3 font-sans text-sm normal-case tracking-normal text-text-primary outline-none focus:border-accent" type="number" value={draft.siteNumber || ''} onChange={(event) => updateOfficialDraft(item.id, 'siteNumber', event.target.value)} />
+                        </label>
+                        <label className="grid gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-text-secondary">
+                          dApp name
+                          <input className="rounded-xl border border-border bg-bg px-3 py-3 font-sans text-sm normal-case tracking-normal text-text-primary outline-none focus:border-accent" value={draft.name || ''} onChange={(event) => updateOfficialDraft(item.id, 'name', event.target.value)} />
+                        </label>
+                        <label className="grid gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-text-secondary">
+                          URL
+                          <input className="rounded-xl border border-border bg-bg px-3 py-3 font-sans text-sm normal-case tracking-normal text-text-primary outline-none focus:border-accent" value={draft.url || ''} onChange={(event) => updateOfficialDraft(item.id, 'url', event.target.value)} />
+                        </label>
+                      </div>
+
+                      <div className="mt-3 grid gap-3 md:grid-cols-2">
+                        <label className="grid gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-text-secondary">
+                          Builder name
+                          <input className="rounded-xl border border-border bg-bg px-3 py-3 font-sans text-sm normal-case tracking-normal text-text-primary outline-none focus:border-accent" value={draft.builder || ''} onChange={(event) => updateOfficialDraft(item.id, 'builder', event.target.value)} />
+                        </label>
+                        <label className="grid gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-text-secondary">
+                          Builder / X / GitHub link
+                          <input className="rounded-xl border border-border bg-bg px-3 py-3 font-sans text-sm normal-case tracking-normal text-text-primary outline-none focus:border-accent" value={draft.builderUrl || ''} onChange={(event) => updateOfficialDraft(item.id, 'builderUrl', event.target.value)} />
+                        </label>
+                      </div>
+
+                      <label className="mt-3 grid gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-text-secondary">
+                        Description
+                        <textarea className="min-h-24 rounded-xl border border-border bg-bg px-3 py-3 font-sans text-sm normal-case tracking-normal text-text-primary outline-none focus:border-accent" value={draft.about || ''} onChange={(event) => updateOfficialDraft(item.id, 'about', event.target.value)} />
+                      </label>
+
+                      <label className="mt-3 grid gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-text-secondary">
+                        Preview URL
+                        <input className="rounded-xl border border-border bg-bg px-3 py-3 font-sans text-sm normal-case tracking-normal text-text-primary outline-none focus:border-accent" value={draft.preview || ''} onChange={(event) => updateOfficialDraft(item.id, 'preview', event.target.value)} />
+                      </label>
+                    </article>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -512,6 +648,7 @@ function App() {
   const [activeSection, setActiveSection] = useState('testnet')
   const [submitOpen, setSubmitOpen] = useState(false)
   const [approvedApps, setApprovedApps] = useState([])
+  const [officialApps, setOfficialApps] = useState([])
   const isAdminRoute = window.location.pathname === '/admin'
 
   const loadApprovedApps = async () => {
@@ -523,8 +660,22 @@ function App() {
     }
   }
 
-  useEffect(() => {
+  const loadOfficialApps = async () => {
+    try {
+      const data = await apiRequest('/api/official-apps')
+      setOfficialApps(data.apps || [])
+    } catch {
+      setOfficialApps([])
+    }
+  }
+
+  const refreshPublicData = () => {
     loadApprovedApps()
+    loadOfficialApps()
+  }
+
+  useEffect(() => {
+    refreshPublicData()
   }, [])
 
   const submitCommunityApp = async (app) => {
@@ -534,21 +685,28 @@ function App() {
     })
   }
 
-  const testnetApps = useMemo(() => apps.map((app, index) => {
-    const details = appDetails[app.url] || appDetails[normalizeUrl(app.url)] || {}
+  const testnetApps = useMemo(() => {
+    const sourceApps = officialApps.length ? officialApps : apps.map((app, index) => {
+      const details = appDetails[app.url] || appDetails[normalizeUrl(app.url)] || {}
+      return {
+        ...app,
+        ...details,
+        siteNumber: index + 1,
+        preview: `/previews/${slugify(app.name, index)}.png`,
+      }
+    })
 
-    return {
+    return sourceApps.map((app, index) => ({
       ...app,
-      ...details,
-      id: index + 1,
+      id: Number(app.siteNumber || index + 1),
       section: 'testnet',
       sectionLabel: 'Testnet',
-      slug: slugify(app.name, index),
+      slug: slugify(app.name, Number(app.siteNumber || index + 1) - 1),
       domain: getDomain(app.url),
       platform: getPlatform(app.url),
       tag: getTag(app.name),
-    }
-  }), [])
+    }))
+  }, [officialApps])
 
   const communityApps = useMemo(() => [...approvedApps, ...preTestnetApps].map((app, index) => ({
     ...app,
@@ -592,7 +750,7 @@ function App() {
   ]
 
   if (isAdminRoute) {
-    return <AdminDashboardModal page onApproved={loadApprovedApps} />
+    return <AdminDashboardModal page onApproved={refreshPublicData} />
   }
 
   return (

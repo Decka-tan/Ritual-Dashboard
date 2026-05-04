@@ -599,28 +599,47 @@ function App() {
     <div className="min-h-screen bg-bg text-text-primary" id="dashboard">
       <Header onSubmitClick={() => setSubmitOpen(true)} />
       <SubmitDappModal open={submitOpen} onClose={() => setSubmitOpen(false)} onSubmit={submitCommunityApp} />
-      <section className="relative min-h-screen overflow-hidden border-b border-border px-5 py-10 md:px-6 md:py-16">
+      <section className="relative flex min-h-screen overflow-hidden border-b border-white/10 px-5 pb-12 pt-28 md:px-6 md:pb-16 md:pt-32">
         <HeroBackground />
 
-        <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-8">
-          <header className="flex flex-col items-start gap-8 pt-10 md:pt-16">
-            <div className="inline-flex rounded-full border border-border bg-surface/70 px-4 py-2 font-mono text-xs uppercase tracking-[0.22em] text-accent backdrop-blur">
+        <main className="relative z-10 mx-auto flex min-h-[calc(100vh-8rem)] w-full max-w-6xl flex-col justify-center gap-8">
+          <header className="flex flex-col items-start gap-8">
+            <div className="liquid-glass flex h-[200px] w-[200px] translate-y-[-50px] flex-col justify-between rounded-[2rem] p-5">
+              <span className="font-mono text-[14px] uppercase tracking-[0.22em] text-white/80">[ 2025 ]</span>
+              <div>
+                <h2 className="text-[18px] font-medium leading-tight text-white">
+                  Built by <span className="font-serif-instrument italic">Ritual</span> Community
+                </h2>
+                <p className="mt-3 text-[11px] leading-relaxed text-white/58">
+                  Official testnet apps, approved pre-testnet experiments, cached previews, and builder metadata in one glassy index.
+                </p>
+              </div>
+            </div>
+
+            <div className="inline-flex liquid-button px-4 py-2 font-mono text-xs uppercase tracking-[0.22em] text-accent">
               Ritual Community Hub
             </div>
 
             <div className="max-w-5xl">
-              <h1 className="font-display text-6xl uppercase leading-[0.9] tracking-tight md:text-8xl lg:text-9xl">
+              <h1 className="font-display text-6xl uppercase leading-[0.86] tracking-tight text-white md:text-8xl lg:text-9xl">
                 Ritual <br />
-                <span className="text-text-secondary">Dashboard</span>
+                <span className="text-white/58">Dashboard</span>
               </h1>
-              <p className="mt-8 max-w-2xl text-lg font-light leading-relaxed text-text-secondary md:text-xl">
+              <p className="mt-8 max-w-2xl text-lg font-light leading-relaxed text-white/68 md:text-xl">
                 Browse official Ritual Testnet dApps and community-built pre-testnet experiments in one hub. Search by app name, builder, domain, hosting platform, or category.
               </p>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <button
+                className="liquid-button inline-flex items-center justify-center px-8 py-4 font-mono text-sm font-semibold uppercase tracking-wider text-accent hover:text-white"
+                type="button"
+                onClick={() => setSubmitOpen(true)}
+              >
+                Submit dApp
+              </button>
               <a
-                className="inline-flex items-center justify-center rounded-xl bg-accent px-8 py-4 font-mono text-sm font-semibold uppercase tracking-wider text-black hover:bg-accent/90"
+                className="liquid-button inline-flex items-center justify-center px-8 py-4 font-mono text-sm font-semibold uppercase tracking-wider text-white hover:text-accent"
                 href="https://docs.google.com/spreadsheets/d/1-71yrtMqSRCTAvmshY2K_wDSYproX7GQFybKwkC5IFM/edit?gid=0#gid=0"
                 target="_blank"
                 rel="noreferrer"
@@ -628,12 +647,12 @@ function App() {
                 Open Source Sheet
               </a>
               <a
-                className="inline-flex items-center justify-center rounded-xl border border-border px-8 py-4 font-mono text-sm font-semibold uppercase tracking-wider text-text-primary hover:border-accent hover:text-accent"
+                className="liquid-button inline-flex items-center justify-center px-8 py-4 font-mono text-sm font-semibold uppercase tracking-wider text-white hover:text-accent"
                 href="#apps"
               >
                 Browse dApps
               </a>
-              <span className="font-mono text-xs uppercase tracking-[0.2em] text-text-secondary">
+              <span className="font-mono text-xs uppercase tracking-[0.2em] text-white/50">
                 Current snapshot · {enrichedApps.length} apps indexed
               </span>
             </div>
@@ -641,9 +660,9 @@ function App() {
 
           <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {statCards.map((item) => (
-              <div key={item.label} className="rounded-2xl border border-border bg-surface/80 p-5 backdrop-blur hover:border-accent/50">
-                <span className="font-mono text-xs uppercase tracking-[0.18em] text-text-secondary">{item.label}</span>
-                <strong className="mt-3 block font-display text-4xl font-normal leading-none text-text-primary">{item.value}</strong>
+              <div key={item.label} className="liquid-glass rounded-[1.5rem] p-5 hover:shadow-[0_18px_60px_rgba(0,255,148,0.12)]">
+                <span className="font-mono text-xs uppercase tracking-[0.18em] text-white/56">{item.label}</span>
+                <strong className="mt-3 block font-display text-4xl font-normal leading-none text-white">{item.value}</strong>
               </div>
             ))}
           </section>
@@ -652,22 +671,18 @@ function App() {
       </section>
 
       <section id="apps" className="mx-auto w-full max-w-6xl scroll-mt-28 px-5 py-14 md:px-6 md:py-20">
-        <div className="mb-8 rounded-[2rem] border border-border bg-surface/85 p-3 backdrop-blur">
+        <div className="mb-8 liquid-glass rounded-[2rem] p-3">
           <div className="relative grid gap-3 md:grid-cols-2">
-            <div
-              className={`absolute inset-y-0 hidden rounded-[1.5rem] bg-accent transition-transform duration-300 md:block md:w-1/2 ${activeSection === 'pretestnet' ? 'translate-x-full' : 'translate-x-0'}`}
-              aria-hidden="true"
-            />
             {sectionTabs.map((item) => {
               const isActive = activeSection === item.id
               return (
                 <button
-                  className={`relative z-10 rounded-[1.5rem] border px-6 py-7 text-left transition md:border-transparent ${isActive ? 'border-accent bg-accent text-black md:bg-transparent' : 'border-border bg-bg/70 text-text-primary hover:border-accent/50'}`}
+                  className={`liquid-button relative z-10 rounded-[1.5rem] px-6 py-7 text-left transition ${isActive ? 'text-accent shadow-[0_18px_55px_rgba(0,255,148,0.16)]' : 'text-text-primary hover:text-accent'}`}
                   key={item.id}
                   type="button"
                   onClick={() => setActiveSection(item.id)}
                 >
-                  <span className={`block font-mono text-xs uppercase tracking-[0.22em] ${isActive ? 'text-black/70' : 'text-text-secondary'}`}>{item.label}</span>
+                  <span className={`block font-mono text-xs uppercase tracking-[0.22em] ${isActive ? 'text-accent' : 'text-text-secondary'}`}>{item.label}</span>
                   <strong className="mt-3 block font-display text-6xl font-normal leading-none">{item.count}</strong>
                 </button>
               )
@@ -675,18 +690,18 @@ function App() {
           </div>
         </div>
 
-        <section className="mb-10 grid gap-4 rounded-2xl border border-border bg-surface/85 p-4 backdrop-blur md:grid-cols-[1.8fr_0.8fr_0.8fr]">
+        <section className="mb-10 grid gap-4 liquid-glass rounded-2xl p-4 md:grid-cols-[1.8fr_0.8fr_0.8fr]">
           <input
-            className="w-full rounded-xl border border-border bg-bg/80 px-4 py-4 font-mono text-sm text-text-primary outline-none placeholder:text-text-secondary focus:border-accent"
+            className="liquid-button w-full rounded-xl px-4 py-4 font-mono text-sm text-text-primary outline-none placeholder:text-text-secondary focus:text-accent"
             type="text"
             placeholder="Search app, builder, domain, category, platform..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
-          <select className="w-full rounded-xl border border-border bg-bg/80 px-4 py-4 font-mono text-sm text-text-primary outline-none focus:border-accent" value={platform} onChange={(e) => setPlatform(e.target.value)}>
+          <select className="liquid-button w-full rounded-xl px-4 py-4 font-mono text-sm text-text-primary outline-none focus:text-accent" value={platform} onChange={(e) => setPlatform(e.target.value)} aria-label="Platforms">
             {platforms.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
-          <select className="w-full rounded-xl border border-border bg-bg/80 px-4 py-4 font-mono text-sm text-text-primary outline-none focus:border-accent" value={tag} onChange={(e) => setTag(e.target.value)}>
+          <select className="liquid-button w-full rounded-xl px-4 py-4 font-mono text-sm text-text-primary outline-none focus:text-accent" value={tag} onChange={(e) => setTag(e.target.value)} aria-label="Categories">
             {tags.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
         </section>

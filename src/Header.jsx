@@ -38,13 +38,13 @@ export function Header({ onSubmitClick }) {
           </a>
         ))}
         <button
-          className="rounded-full border border-accent/40 bg-accent/10 px-4 py-2 text-accent transition hover:bg-accent hover:text-black"
+          className="liquid-button px-4 py-2 text-accent transition hover:text-white"
           type="button"
           onClick={openSubmit}
         >
           Submit dApp
         </button>
-        <span className="rounded-full border border-accent/30 bg-accent/10 px-3 py-1.5 text-accent">Testnet</span>
+        <span className="liquid-button px-3 py-1.5 text-accent">Testnet</span>
       </nav>
 
       <button

@@ -611,7 +611,7 @@ function App() {
             <div className="max-w-5xl">
               <h1 className="font-display text-6xl uppercase leading-[0.9] tracking-tight md:text-8xl lg:text-9xl">
                 Ritual <br />
-                <span className="text-text-secondary">Dashboard</span>
+                <span className="text-accent">Dashboard</span>
               </h1>
               <p className="mt-8 max-w-2xl text-lg font-light leading-relaxed text-text-secondary md:text-xl">
                 Browse official Ritual Testnet dApps and community-built pre-testnet experiments in one hub. Search by app name, builder, domain, hosting platform, or category.
@@ -624,6 +624,14 @@ function App() {
                 href="#apps"
               >
                 Browse dApps
+              </a>
+              <a
+                className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-black/35 px-8 py-4 font-mono text-sm font-semibold uppercase tracking-wider text-text-primary backdrop-blur hover:border-accent hover:text-accent"
+                href="https://docs.google.com/spreadsheets/d/1-71yrtMqSRCTAvmshY2K_wDSYproX7GQFybKwkC5IFM/edit?gid=0#gid=0"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Source Sheet
               </a>
             </div>
           </header>

@@ -599,10 +599,10 @@ function App() {
     <div className="min-h-screen bg-bg text-text-primary" id="dashboard">
       <Header onSubmitClick={() => setSubmitOpen(true)} />
       <SubmitDappModal open={submitOpen} onClose={() => setSubmitOpen(false)} onSubmit={submitCommunityApp} />
-      <section className="relative flex min-h-screen overflow-hidden border-b border-white/10 px-5 pb-12 pt-28 md:px-6 md:pb-16 md:pt-32">
+      <section className="relative flex min-h-screen items-center overflow-hidden border-b border-white/10 px-5 py-24 md:px-6 md:py-28">
         <HeroBackground />
 
-        <main className="relative z-10 mx-auto flex min-h-[calc(100vh-8rem)] w-full max-w-6xl flex-col justify-center gap-8">
+        <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-col justify-center gap-8">
           <header className="flex flex-col items-start gap-8">
             <div className="inline-flex rounded-full border border-border bg-surface/70 px-4 py-2 font-mono text-xs uppercase tracking-[0.22em] text-accent backdrop-blur">
               Ritual Community Hub
@@ -620,7 +620,7 @@ function App() {
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <a
-                className="inline-flex items-center justify-center rounded-xl border border-border px-8 py-4 font-mono text-sm font-semibold uppercase tracking-wider text-text-primary hover:border-accent hover:text-accent"
+                className="inline-flex items-center justify-center rounded-xl border border-accent bg-accent px-8 py-4 font-mono text-sm font-semibold uppercase tracking-wider text-black hover:bg-accent/90"
                 href="#apps"
               >
                 Browse dApps
@@ -630,7 +630,7 @@ function App() {
 
           <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {statCards.map((item) => (
-              <div key={item.label} className="rounded-2xl border border-border bg-surface/80 p-5 backdrop-blur hover:border-accent/50">
+              <div key={item.label} className="rounded-2xl border border-white/15 bg-surface/35 p-5 backdrop-blur-md hover:border-accent/50">
                 <span className="font-mono text-xs uppercase tracking-[0.18em] text-text-secondary">{item.label}</span>
                 <strong className="mt-3 block font-display text-4xl font-normal leading-none text-text-primary">{item.value}</strong>
               </div>

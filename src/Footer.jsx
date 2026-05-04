@@ -39,14 +39,6 @@ export function Footer() {
               >
                 X
               </a>
-              <a
-                className="rounded-full border border-accent/40 bg-accent px-4 py-3 font-mono text-[10px] uppercase tracking-wider text-black transition-colors duration-300 hover:bg-accent/90"
-                href="https://docs.google.com/spreadsheets/d/1-71yrtMqSRCTAvmshY2K_wDSYproX7GQFybKwkC5IFM/edit?gid=0#gid=0"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Source Sheet
-              </a>
             </div>
           </div>
         </div>

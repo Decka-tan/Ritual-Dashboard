@@ -47,11 +47,6 @@ export function Footer() {
       <footer className="border-t border-border py-12 text-center font-mono text-xs uppercase tracking-[0.2em] text-text-secondary">
         <div className="mx-auto max-w-7xl px-8">
           <div className="mb-4">© 2026 Ritual Dashboard — All Rights Reserved</div>
-          <div className="mb-3 flex flex-col items-center justify-center gap-2 text-[10px] opacity-60 md:flex-row md:gap-4">
-            <span>Built with Vite, React and Tailwind</span>
-            <span className="hidden md:inline">•</span>
-            <span>Cached previews powered by Playwright</span>
-          </div>
           <div className="flex flex-col items-center justify-center gap-2 text-[10px] opacity-60 md:flex-row md:gap-4">
             <a href="https://github.com/Decka-tan" target="_blank" rel="noreferrer" className="transition-colors hover:text-accent">GitHub</a>
             <span>•</span>

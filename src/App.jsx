@@ -443,11 +443,7 @@ function AppCard({ app }) {
         </div>
 
         <div className="mt-5 flex flex-wrap items-center gap-2">
-          <span className="rounded-full border border-border px-3 py-1.5 font-mono text-xs text-text-secondary">{app.platform}</span>
-          <span className="rounded-full border border-border px-3 py-1.5 font-mono text-xs text-text-secondary">
-            Builder: {app.builder || 'Unknown'}
-          </span>
-          {app.builderUrl && (
+          {app.builderUrl ? (
             <a
               className="rounded-full border border-accent/30 px-3 py-1.5 font-mono text-xs text-accent hover:bg-accent hover:text-black"
               href={app.builderUrl}
@@ -455,9 +451,14 @@ function AppCard({ app }) {
               rel="noreferrer"
               onClick={(event) => event.stopPropagation()}
               onKeyDown={(event) => event.stopPropagation()}
+              aria-label={`Open creator link for ${app.name}`}
             >
-              Creator link
+              Builder: {app.builder || 'Creator'}
             </a>
+          ) : (
+            <span className="rounded-full border border-border px-3 py-1.5 font-mono text-xs text-text-secondary">
+              Builder: {app.builder || 'Unknown'}
+            </span>
           )}
         </div>
       </div>

@@ -3,7 +3,7 @@ import { listSubmissions, readBody, sendJson, supabaseFetch, toClientSubmission,
 export default async function handler(req, res) {
   try {
     if (req.method === 'GET') {
-      const approved = await listSubmissions('&status=eq.approved')
+      const approved = await listSubmissions('&status=eq.approved', 'created_at.asc')
       sendJson(res, 200, { approved })
       return
     }

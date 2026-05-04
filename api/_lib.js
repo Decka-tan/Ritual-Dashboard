@@ -99,8 +99,8 @@ export function toDbSubmission(body = {}) {
   }
 }
 
-export async function listSubmissions(filter = '') {
-  const rows = await supabaseFetch(`/submissions?select=*&order=created_at.desc${filter}`)
+export async function listSubmissions(filter = '', order = 'created_at.desc') {
+  const rows = await supabaseFetch(`/submissions?select=*&order=${order}${filter}`)
   return rows.map(toClientSubmission)
 }
 

@@ -1,7 +1,7 @@
 export function Footer() {
   return (
     <>
-      <section className="border-t border-border bg-surface px-6 py-24">
+      <section id="about" className="border-t border-border bg-surface px-6 py-24">
         <div className="mx-auto flex max-w-3xl flex-col items-center gap-12 md:flex-row">
           <div className="group relative h-48 w-48 shrink-0 overflow-hidden rounded-2xl border border-border">
             <div className="absolute inset-0 z-10 bg-accent/20 opacity-0 mix-blend-overlay transition-opacity duration-300 group-hover:opacity-100" />
@@ -22,7 +22,7 @@ export function Footer() {
               As known as Decka-chan in Ritual Discord. Cute anime girl on Ritual. Ritty on Ritual Discord. Passionate about graphic design, lettering, and vibe coding.
             </p>
 
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center justify-center gap-4 md:justify-start">
               <a
                 className="rounded-full border border-border px-4 py-3 font-mono text-[10px] uppercase tracking-wider text-text-primary transition-colors duration-300 hover:border-border hover:text-accent"
                 href="https://github.com/Decka-tan"
@@ -38,6 +38,14 @@ export function Footer() {
                 rel="noreferrer"
               >
                 X
+              </a>
+              <a
+                className="rounded-full border border-accent/40 bg-accent px-4 py-3 font-mono text-[10px] uppercase tracking-wider text-black transition-colors duration-300 hover:bg-accent/90"
+                href="https://docs.google.com/spreadsheets/d/1-71yrtMqSRCTAvmshY2K_wDSYproX7GQFybKwkC5IFM/edit?gid=0#gid=0"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Source Sheet
               </a>
             </div>
           </div>

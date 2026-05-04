@@ -1,9 +1,8 @@
 import { useState } from 'react'
 
 const navLinks = [
-  { label: 'Dashboard', href: '#dashboard' },
+  { label: 'About', href: '#about' },
   { label: 'Apps', href: '#apps' },
-  { label: 'Source Sheet', href: 'https://docs.google.com/spreadsheets/d/1-71yrtMqSRCTAvmshY2K_wDSYproX7GQFybKwkC5IFM/edit?gid=0#gid=0', external: true },
 ]
 
 export function Header({ onSubmitClick }) {
@@ -38,13 +37,12 @@ export function Header({ onSubmitClick }) {
           </a>
         ))}
         <button
-          className="rounded-full border border-accent/40 bg-accent/10 px-4 py-2 text-accent transition hover:bg-accent hover:text-black"
+          className="rounded-full border border-accent/40 bg-accent px-4 py-2 text-black transition hover:bg-accent/90"
           type="button"
           onClick={openSubmit}
         >
-          Submit dApp
+          Submit
         </button>
-        <span className="rounded-full border border-accent/30 bg-accent/10 px-3 py-1.5 text-accent">Testnet</span>
       </nav>
 
       <button
@@ -85,15 +83,12 @@ export function Header({ onSubmitClick }) {
                 </a>
               ))}
               <button
-                className="block w-full rounded-lg px-3 py-2 text-left font-mono text-xs uppercase tracking-wider text-accent hover:bg-accent hover:text-black"
+                className="block w-full rounded-lg bg-accent px-3 py-2 text-left font-mono text-xs uppercase tracking-wider text-black hover:bg-accent/90"
                 type="button"
                 onClick={openSubmit}
               >
-                Submit dApp
+                Submit
               </button>
-              <div className="border-t border-border pt-2">
-                <span className="block rounded-lg px-3 py-2 font-mono text-xs uppercase tracking-wider text-accent">Ritual Testnet</span>
-              </div>
             </nav>
           </div>
         </>

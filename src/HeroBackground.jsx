@@ -4,7 +4,7 @@ export function HeroBackground() {
   return (
     <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden select-none">
       <video
-        className="absolute inset-0 h-full w-full scale-105 object-cover opacity-70 saturate-[1.15]"
+        className="absolute inset-0 h-full w-full scale-105 object-cover object-bottom opacity-70 saturate-[1.15]"
         src={HERO_VIDEO_URL}
         autoPlay
         muted

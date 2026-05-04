@@ -620,22 +620,11 @@ function App() {
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <a
-                className="inline-flex items-center justify-center rounded-xl bg-accent px-8 py-4 font-mono text-sm font-semibold uppercase tracking-wider text-black hover:bg-accent/90"
-                href="https://docs.google.com/spreadsheets/d/1-71yrtMqSRCTAvmshY2K_wDSYproX7GQFybKwkC5IFM/edit?gid=0#gid=0"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Open Source Sheet
-              </a>
-              <a
                 className="inline-flex items-center justify-center rounded-xl border border-border px-8 py-4 font-mono text-sm font-semibold uppercase tracking-wider text-text-primary hover:border-accent hover:text-accent"
                 href="#apps"
               >
                 Browse dApps
               </a>
-              <span className="font-mono text-xs uppercase tracking-[0.2em] text-text-secondary">
-                Current snapshot · {enrichedApps.length} apps indexed
-              </span>
             </div>
           </header>
 

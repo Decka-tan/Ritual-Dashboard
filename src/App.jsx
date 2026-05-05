@@ -8,6 +8,13 @@ import { preTestnetApps } from './data/preTestnetApps'
 
 const normalizeUrl = (url = '') => url.startsWith('http') ? url : `https://${url}`
 
+const PINNED_DAPP_DOMAINS = [
+  'siggy.decka.my.id',
+  'cards.decka.my.id',
+  'ticket.decka.my.id',
+  'dashboard.decka.my.id',
+]
+
 const getDomain = (url = '') => {
   try {
     return new URL(normalizeUrl(url)).hostname.replace(/^www\./, '')
@@ -15,6 +22,14 @@ const getDomain = (url = '') => {
     return url || 'unknown-domain'
   }
 }
+
+const getPinnedDappRank = (app = {}) => {
+  const domain = getDomain(app.url).toLowerCase()
+  const rank = PINNED_DAPP_DOMAINS.findIndex((pinnedDomain) => domain === pinnedDomain || domain.endsWith(`.${pinnedDomain}`))
+  return rank === -1 ? Number.POSITIVE_INFINITY : rank
+}
+
+const sortPinnedDappsFirst = (items = []) => [...items].sort((left, right) => getPinnedDappRank(left) - getPinnedDappRank(right))
 
 const getPlatform = (url) => {
   const host = getDomain(url)
@@ -916,8 +931,8 @@ function App() {
     })
   }, [enrichedApps, query, platform, tag])
 
-  const filteredTestnetApps = filteredApps.filter((app) => app.section === 'testnet')
-  const filteredCommunityApps = filteredApps.filter((app) => app.section === 'pretestnet')
+  const filteredTestnetApps = sortPinnedDappsFirst(filteredApps.filter((app) => app.section === 'testnet'))
+  const filteredCommunityApps = sortPinnedDappsFirst(filteredApps.filter((app) => app.section === 'pretestnet'))
   const activeApps = activeSection === 'testnet' ? filteredTestnetApps : filteredCommunityApps
 
   const sectionTabs = [

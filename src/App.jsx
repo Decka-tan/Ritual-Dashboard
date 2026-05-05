@@ -895,10 +895,10 @@ function App() {
       }
     })
 
-    return orderDeckaSitesAsFirstNumbers(sourceApps).map((app, index) => ({
+    return sourceApps.map((app, index) => ({
       ...app,
       id: index + 1,
-      siteNumber: index + 1,
+      siteNumber: app.siteNumber || index + 1,
       section: 'testnet',
       sectionLabel: 'Testnet',
       slug: slugify(app.name, index),
@@ -924,7 +924,7 @@ function App() {
       mergedApps.push(app)
     })
 
-    return mergedApps.map((app, index) => ({
+    return orderDeckaSitesAsFirstNumbers(mergedApps).map((app, index) => ({
       ...app,
       id: index + 1,
       section: 'pretestnet',

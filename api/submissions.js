@@ -4,7 +4,12 @@ export default async function handler(req, res) {
   try {
     if (req.method === 'GET') {
       const approved = await listSubmissions('&status=eq.approved', 'site_number.asc.nullslast,created_at.asc')
-      sendJson(res, 200, { approved })
+      const existingRows = await supabaseFetch('/submissions?select=url,status')
+      const hiddenUrls = existingRows
+        .filter((row) => row.status !== 'approved')
+        .map((row) => row.url)
+        .filter(Boolean)
+      sendJson(res, 200, { approved, hiddenUrls })
       return
     }
 

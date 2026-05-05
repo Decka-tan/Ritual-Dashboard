@@ -815,6 +815,7 @@ function App() {
   const [activeSection, setActiveSection] = useState('testnet')
   const [submitOpen, setSubmitOpen] = useState(false)
   const [approvedApps, setApprovedApps] = useState([])
+  const [hiddenPreTestnetUrls, setHiddenPreTestnetUrls] = useState([])
   const [officialApps, setOfficialApps] = useState([])
   const isAdminRoute = window.location.pathname === '/admin'
 
@@ -822,8 +823,10 @@ function App() {
     try {
       const data = await apiRequest('/api/submissions')
       setApprovedApps(data.approved || [])
+      setHiddenPreTestnetUrls(data.hiddenUrls || [])
     } catch {
       setApprovedApps([])
+      setHiddenPreTestnetUrls([])
     }
   }
 
@@ -878,7 +881,11 @@ function App() {
 
   const communityApps = useMemo(() => {
     const approvedUrls = new Set(approvedApps.map((app) => normalizeUrl(app.url).toLowerCase()))
-    const staticFallbackApps = preTestnetApps.filter((app) => !approvedUrls.has(normalizeUrl(app.url).toLowerCase()))
+    const hiddenUrls = new Set(hiddenPreTestnetUrls.map((url) => normalizeUrl(url).toLowerCase()))
+    const staticFallbackApps = preTestnetApps.filter((app) => {
+      const appUrl = normalizeUrl(app.url).toLowerCase()
+      return !approvedUrls.has(appUrl) && !hiddenUrls.has(appUrl)
+    })
     const mergedApps = [...approvedApps, ...staticFallbackApps]
 
     return mergedApps.map((app, index) => ({
@@ -892,7 +899,7 @@ function App() {
       platform: getPlatform(app.url),
       tag: getTag(app.name),
     }))
-  }, [approvedApps])
+  }, [approvedApps, hiddenPreTestnetUrls])
 
   const enrichedApps = useMemo(() => [...testnetApps, ...communityApps], [testnetApps, communityApps])
   const platforms = useMemo(() => ['All', ...new Set(enrichedApps.map(app => app.platform))], [enrichedApps])

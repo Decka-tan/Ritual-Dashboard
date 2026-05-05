@@ -161,5 +161,17 @@ export const appDetails = {
   "https://t.me/DiaRoutine_Bot": {
     about: "Telegram bot for diabetes diary/routine tracking.",
     builder: "Unknown"
+  },
+  "https://www.ritcord.xyz/": {
+    about: "Ritual Discord tracker NFT mint app.",
+    builder: "Unknown"
+  },
+  "https://siggy-ritualizer.vercel.app/": {
+    about: "Siggy-themed Ritualizer app.",
+    builder: "Unknown"
+  },
+  "https://ritual-flip.vercel.app/": {
+    about: "Ritual coin flip game.",
+    builder: "Unknown"
   }
 }

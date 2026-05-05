@@ -130,5 +130,17 @@ export const apps = [
   {
     name: "diabetes diary TG BOT",
     url: "https://t.me/DiaRoutine_Bot"
+  },
+  {
+    name: "Ritual Discord Tracker NFT MInt",
+    url: "https://www.ritcord.xyz/"
+  },
+  {
+    name: "Siggy Ritualizer",
+    url: "https://siggy-ritualizer.vercel.app/"
+  },
+  {
+    name: "Ritual Coin Flip",
+    url: "https://ritual-flip.vercel.app/"
   }
 ]

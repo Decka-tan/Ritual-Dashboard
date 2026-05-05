@@ -288,6 +288,7 @@ function AdminDashboardModal({ open = true, onClose, onApproved, page = false })
   const [editingOfficial, setEditingOfficial] = useState({})
   const [adminTab, setAdminTab] = useState('submissions')
   const [error, setError] = useState('')
+  const [syncResult, setSyncResult] = useState(null)
   const [loading, setLoading] = useState(false)
 
   const loadSubmissions = async (adminToken = token) => {
@@ -426,6 +427,26 @@ function AdminDashboardModal({ open = true, onClose, onApproved, page = false })
     }
   }
 
+  const syncOfficialApps = async () => {
+    setLoading(true)
+    setError('')
+    setSyncResult(null)
+    try {
+      const result = await apiRequest('/api/sync-sheet', {
+        method: 'POST',
+        token,
+        timeoutMs: 90000,
+      })
+      setSyncResult(result)
+      await loadOfficialApps(token)
+      onApproved?.()
+    } catch (error) {
+      setError(error.message || 'Failed to sync Google Sheet')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const pending = submissions.filter((item) => item.status === 'pending')
   const approved = submissions.filter((item) => item.status === 'approved')
   const rejected = submissions.filter((item) => item.status === 'rejected')
@@ -495,6 +516,20 @@ function AdminDashboardModal({ open = true, onClose, onApproved, page = false })
               )
             ) : (
               <div className="grid gap-4">
+                <div className="rounded-2xl border border-accent/20 bg-accent/5 p-5">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">Manual Google Sheet sync</span>
+                      <p className="mt-2 text-sm leading-relaxed text-text-secondary">Pull latest Official Testnet rows from Google Sheet into Supabase. Existing site numbers are skipped, so manual edits stay safe.</p>
+                    </div>
+                    <button className="rounded-xl bg-accent px-5 py-3 font-mono text-xs font-semibold uppercase tracking-wider text-black hover:bg-accent/90 disabled:opacity-60" type="button" onClick={syncOfficialApps} disabled={loading}>{loading ? 'Syncing...' : 'Sync Google Sheet'}</button>
+                  </div>
+                  {syncResult && (
+                    <p className="mt-4 rounded-xl border border-border bg-bg/70 px-4 py-3 font-mono text-xs uppercase tracking-[0.14em] text-text-secondary">
+                      Scanned {syncResult.scanned || 0} · Inserted {syncResult.inserted || 0} · Skipped {syncResult.skippedExisting || 0}
+                    </p>
+                  )}
+                </div>
                 {officialApps.map((item) => {
                   const draft = editingOfficial[item.id] || item
                   return (

@@ -4,7 +4,7 @@ Community hub for Ritual dApps, deployed on Vercel with Supabase-backed admin ed
 
 ## What it does
 
-- **Official Testnet**: live list of Ritual Testnet dApps stored in Supabase `official_apps`; Vercel Cron can import new Google Sheet rows without overwriting existing records.
+- **Official Testnet**: live list of Ritual Testnet dApps stored in Supabase `official_apps`; admins can manually import new Google Sheet rows without overwriting existing records.
 - **Pre-Testnet**: approved community submissions stored in Supabase `submissions`.
 - **Admin route**: `/admin` for reviewing submissions and editing Official Testnet metadata.
 - **Preview images**: static cached previews in `public/previews/` plus Microlink-generated external screenshot URLs for newly approved/refreshed apps.
@@ -122,7 +122,7 @@ The project is Vercel-ready. `vercel.json` routes:
 }
 ```
 
-This keeps direct routes like `/admin` working as a React route while preserving `/api/*` serverless functions. It also runs `/api/sync-sheet` every 6 hours through Vercel Cron.
+This keeps direct routes like `/admin` working as a React route while preserving `/api/*` serverless functions. Google Sheet imports are triggered manually from the admin Official Testnet tab.
 
 Deployment checklist:
 
@@ -140,8 +140,8 @@ Public:
 GET  /api/official-apps      list Official Testnet apps from Supabase
 GET  /api/submissions        list approved Pre-Testnet submissions, oldest-first
 POST /api/submissions        submit a new pending Pre-Testnet dApp
-GET  /api/sync-sheet         Vercel Cron: sync Google Sheet -> Supabase official_apps
-POST /api/sync-sheet         manual sync with Authorization: Bearer <CRON_SECRET>
+GET  /api/sync-sheet         secret-protected Google Sheet -> Supabase official_apps sync
+POST /api/sync-sheet         manual sync with admin token or Authorization: Bearer <CRON_SECRET>
 ```
 
 Admin:
@@ -172,6 +172,7 @@ After login, the admin page has two tabs:
   - approve or reject
   - approval sets a Microlink screenshot URL if no preview exists
 - **Official Testnet**
+  - click **Sync Google Sheet** to manually import new sheet rows into Supabase
   - edit site number, name, URL, builder name, builder link, description, and preview URL
   - refresh preview URL through Microlink
 
@@ -186,8 +187,8 @@ Admin approve
   -> POST /api/admin/review
   -> Supabase submissions(status='approved', preview_url=Microlink URL)
 
-Vercel Cron, every 6 hours
-  -> GET /api/sync-sheet
+Admin manual sync
+  -> POST /api/sync-sheet
   -> Google Sheet CSV
   -> Supabase official_apps insert-only by site_number
 
@@ -207,13 +208,13 @@ Original community source sheet:
 https://docs.google.com/spreadsheets/d/1-71yrtMqSRCTAvmshY2K_wDSYproX7GQFybKwkC5IFM/edit?gid=0#gid=0
 ```
 
-Current production flow uses the Google Sheet as the Official Testnet source of truth. Vercel Cron syncs:
+Current production flow uses the Google Sheet as the Official Testnet source of truth. Admin manual sync runs:
 
 ```txt
 Google Sheet -> /api/sync-sheet -> Supabase official_apps -> /api/official-apps -> Dashboard
 ```
 
-Admin edits are still available through `/admin`. The cron sync is insert-only: if a `site_number` already exists in Supabase, that row is skipped, so existing builder names, builder links, descriptions, previews, and manual edits are not overwritten by the sheet.
+Admin edits are still available through `/admin`. The manual sync is insert-only: if a `site_number` already exists in Supabase, that row is skipped, so existing builder names, builder links, descriptions, previews, and manual edits are not overwritten by the sheet.
 
 ## Project structure
 

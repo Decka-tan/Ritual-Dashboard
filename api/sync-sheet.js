@@ -1,4 +1,4 @@
-import { cleanString, normalizeUrl, screenshotUrlFor, sendJson, supabaseFetch } from './_lib.js'
+import { cleanString, normalizeUrl, requireAdmin, screenshotUrlFor, sendJson, supabaseFetch } from './_lib.js'
 
 const DEFAULT_SHEET_ID = '1-71yrtMqSRCTAvmshY2K_wDSYproX7GQFybKwkC5IFM'
 const DEFAULT_GID = '0'
@@ -142,7 +142,9 @@ export default async function handler(req, res) {
       return
     }
 
-    if (!isAuthorized(req)) {
+    if (req.method === 'POST') {
+      if (!isAuthorized(req) && !await requireAdmin(req, res)) return
+    } else if (!isAuthorized(req)) {
       sendJson(res, 401, { error: 'Unauthorized' })
       return
     }

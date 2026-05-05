@@ -8,45 +8,12 @@ import { preTestnetApps } from './data/preTestnetApps'
 
 const normalizeUrl = (url = '') => url.startsWith('http') ? url : `https://${url}`
 
-const DECKA_SITE_NUMBER_DOMAINS = [
-  'siggy.decka.my.id',
-  'cards.decka.my.id',
-  'ticket.decka.my.id',
-  'dashboard.decka.my.id',
-]
-
 const getDomain = (url = '') => {
   try {
     return new URL(normalizeUrl(url)).hostname.replace(/^www\./, '')
   } catch {
     return url || 'unknown-domain'
   }
-}
-
-const getDeckaSiteNumber = (app = {}) => {
-  const domain = getDomain(app.url).toLowerCase()
-  const index = DECKA_SITE_NUMBER_DOMAINS.findIndex((deckaDomain) => domain === deckaDomain || domain.endsWith(`.${deckaDomain}`))
-  return index === -1 ? null : index + 1
-}
-
-const orderDeckaSitesAsFirstNumbers = (items = []) => {
-  const deckaApps = new Map()
-  const otherApps = []
-
-  items.forEach((app) => {
-    const siteNumber = getDeckaSiteNumber(app)
-    if (siteNumber) {
-      deckaApps.set(siteNumber, app)
-      return
-    }
-
-    otherApps.push(app)
-  })
-
-  return [
-    ...DECKA_SITE_NUMBER_DOMAINS.map((_, index) => deckaApps.get(index + 1)).filter(Boolean),
-    ...otherApps,
-  ]
 }
 
 const getPlatform = (url) => {
@@ -713,7 +680,7 @@ function AdminDashboardModal({ open = true, onClose, onApproved, page = false })
                     <article key={item.id} className="rounded-2xl border border-border bg-bg/70 p-5">
                       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                         <div>
-                          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">Pre-Testnet #{String(index + 1).padStart(2, '0')}</span>
+                          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">Pre-Testnet #{String(draft.siteNumber || item.siteNumber || index + 1).padStart(2, '0')}</span>
                           <h3 className="mt-2 font-display text-3xl uppercase leading-none text-text-primary">{draft.name || item.name}</h3>
                         </div>
                         <div className="flex flex-wrap gap-2 font-mono text-xs">
@@ -722,7 +689,8 @@ function AdminDashboardModal({ open = true, onClose, onApproved, page = false })
                           <button className="rounded-full border border-accent/40 bg-accent px-3 py-1.5 text-black hover:bg-accent/90 disabled:opacity-50" type="button" onClick={() => savePretestnetApp(item.id)} disabled={loading}>Save</button>
                         </div>
                       </div>
-                      <div className="grid gap-3 md:grid-cols-2">
+                      <div className="grid gap-3 md:grid-cols-[0.35fr_1fr_1fr]">
+                        <label className="grid gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-text-secondary">Site #<input className="rounded-xl border border-border bg-bg px-3 py-3 font-sans text-sm normal-case tracking-normal text-text-primary outline-none focus:border-accent" type="number" value={draft.siteNumber || ''} onChange={(event) => updatePretestnetDraft(item.id, 'siteNumber', event.target.value)} /></label>
                         <label className="grid gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-text-secondary">dApp name<input className="rounded-xl border border-border bg-bg px-3 py-3 font-sans text-sm normal-case tracking-normal text-text-primary outline-none focus:border-accent" value={draft.name || ''} onChange={(event) => updatePretestnetDraft(item.id, 'name', event.target.value)} /></label>
                         <label className="grid gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-text-secondary">URL<input className="rounded-xl border border-border bg-bg px-3 py-3 font-sans text-sm normal-case tracking-normal text-text-primary outline-none focus:border-accent" value={draft.url || ''} onChange={(event) => updatePretestnetDraft(item.id, 'url', event.target.value)} /></label>
                       </div>
@@ -909,24 +877,14 @@ function App() {
   }, [officialApps])
 
   const communityApps = useMemo(() => {
-    const mergedApps = [...preTestnetApps]
-    const seenUrls = new Set(preTestnetApps.map((app) => normalizeUrl(app.url).toLowerCase()))
+    const approvedUrls = new Set(approvedApps.map((app) => normalizeUrl(app.url).toLowerCase()))
+    const staticFallbackApps = preTestnetApps.filter((app) => !approvedUrls.has(normalizeUrl(app.url).toLowerCase()))
+    const mergedApps = [...approvedApps, ...staticFallbackApps]
 
-    approvedApps.forEach((app) => {
-      const appUrl = normalizeUrl(app.url).toLowerCase()
-      if (seenUrls.has(appUrl)) {
-        const existingIndex = mergedApps.findIndex((item) => normalizeUrl(item.url).toLowerCase() === appUrl)
-        if (existingIndex >= 0) mergedApps[existingIndex] = { ...mergedApps[existingIndex], ...app }
-        return
-      }
-
-      seenUrls.add(appUrl)
-      mergedApps.push(app)
-    })
-
-    return orderDeckaSitesAsFirstNumbers(mergedApps).map((app, index) => ({
+    return mergedApps.map((app, index) => ({
       ...app,
       id: index + 1,
+      siteNumber: app.siteNumber || index + 1,
       section: 'pretestnet',
       sectionLabel: 'Pre-Testnet',
       slug: slugify(`pretestnet-${app.name}`, index),

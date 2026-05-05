@@ -9,6 +9,7 @@ function toDbPreTestnetApp(body = {}) {
     creator_name: cleanString(body.builder || body.creator_name, 120) || 'Unknown',
     creator_handle: cleanString(body.builderHandle || body.creator_handle, 80),
     creator_url: normalizeUrl(body.builderUrl || body.creator_url),
+    site_number: Number(body.siteNumber || body.site_number || 0),
     status: 'approved',
     preview_url: normalizeUrl(body.preview || body.preview_url),
     preview_status: cleanString(body.previewStatus || body.preview_status || 'pending', 40),
@@ -17,7 +18,7 @@ function toDbPreTestnetApp(body = {}) {
 }
 
 async function listApprovedPreTestnetApps() {
-  const rows = await supabaseFetch('/submissions?select=*&status=eq.approved&order=created_at.asc')
+  const rows = await supabaseFetch('/submissions?select=*&status=eq.approved&order=site_number.asc.nullslast,created_at.asc')
   return rows.map(toClientSubmission)
 }
 
@@ -91,7 +92,7 @@ export default async function handler(req, res) {
         const rowsToInsert = preTestnetApps
           .filter((app) => !existingUrls.has(normalizeUrl(app.url).toLowerCase()))
           .map((app, index) => ({
-            ...toDbPreTestnetApp({ ...app, preview: screenshotUrlFor(app.url), previewStatus: 'external', approvedAt: now }),
+            ...toDbPreTestnetApp({ ...app, siteNumber: index + 1, preview: screenshotUrlFor(app.url), previewStatus: 'external', approvedAt: now }),
             created_at: new Date(Date.now() + index).toISOString(),
           }))
 

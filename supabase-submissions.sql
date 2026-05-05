@@ -6,6 +6,7 @@ create table if not exists submissions (
   creator_handle text,
   creator_name text,
   creator_url text,
+  site_number integer,
   status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
   preview_url text,
   preview_status text not null default 'pending',
@@ -14,6 +15,8 @@ create table if not exists submissions (
   rejected_at timestamptz
 );
 
+alter table submissions add column if not exists site_number integer;
+create index if not exists submissions_status_site_number_created_at_idx on submissions (status, site_number asc, created_at asc);
 create index if not exists submissions_status_created_at_idx on submissions (status, created_at desc);
 
 create table if not exists official_apps (

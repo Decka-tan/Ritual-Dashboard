@@ -77,6 +77,7 @@ export function toClientSubmission(row = {}) {
     builder: row.creator_name || row.builder || row.creator_handle || 'Unknown',
     builderHandle: row.creator_handle || '',
     builderUrl: row.creator_url || '',
+    siteNumber: Number(row.site_number || 0),
     about: row.description || row.about || '',
     status: row.status || 'pending',
     preview: row.preview_url || row.preview || '',

@@ -47,11 +47,12 @@ const slugify = (value, index) => `${String(index + 1).padStart(2, '0')}-${value
 const getBuilderIdentity = (app = {}) => {
   const rawIdentity = app.builderUrl || app.builderHandle || app.builder || ''
   const identity = String(rawIdentity).trim().toLowerCase()
-  if (!identity) return ''
+  if (!identity || identity === 'unknown') return ''
+
+  const xHandle = extractXHandle(identity).toLowerCase()
+  if (xHandle) return `x:${xHandle}`
 
   return identity
-    .replace(/^https?:\/\/(?:www\.)?(?:vx)?twitter\.com\//, 'x.com/')
-    .replace(/^https?:\/\/(?:www\.)?x\.com\//, 'x.com/')
     .replace(/^@/, '')
     .replace(/\/$/, '')
 }

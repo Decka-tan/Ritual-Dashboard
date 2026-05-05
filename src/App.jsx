@@ -8,7 +8,7 @@ import { preTestnetApps } from './data/preTestnetApps'
 
 const normalizeUrl = (url = '') => url.startsWith('http') ? url : `https://${url}`
 
-const PINNED_DAPP_DOMAINS = [
+const DECKA_SITE_NUMBER_DOMAINS = [
   'siggy.decka.my.id',
   'cards.decka.my.id',
   'ticket.decka.my.id',
@@ -23,13 +23,31 @@ const getDomain = (url = '') => {
   }
 }
 
-const getPinnedDappRank = (app = {}) => {
+const getDeckaSiteNumber = (app = {}) => {
   const domain = getDomain(app.url).toLowerCase()
-  const rank = PINNED_DAPP_DOMAINS.findIndex((pinnedDomain) => domain === pinnedDomain || domain.endsWith(`.${pinnedDomain}`))
-  return rank === -1 ? Number.POSITIVE_INFINITY : rank
+  const index = DECKA_SITE_NUMBER_DOMAINS.findIndex((deckaDomain) => domain === deckaDomain || domain.endsWith(`.${deckaDomain}`))
+  return index === -1 ? null : index + 1
 }
 
-const sortPinnedDappsFirst = (items = []) => [...items].sort((left, right) => getPinnedDappRank(left) - getPinnedDappRank(right))
+const orderDeckaSitesAsFirstNumbers = (items = []) => {
+  const deckaApps = new Map()
+  const otherApps = []
+
+  items.forEach((app) => {
+    const siteNumber = getDeckaSiteNumber(app)
+    if (siteNumber) {
+      deckaApps.set(siteNumber, app)
+      return
+    }
+
+    otherApps.push(app)
+  })
+
+  return [
+    ...DECKA_SITE_NUMBER_DOMAINS.map((_, index) => deckaApps.get(index + 1)).filter(Boolean),
+    ...otherApps,
+  ]
+}
 
 const getPlatform = (url) => {
   const host = getDomain(url)
@@ -877,12 +895,13 @@ function App() {
       }
     })
 
-    return sourceApps.map((app, index) => ({
+    return orderDeckaSitesAsFirstNumbers(sourceApps).map((app, index) => ({
       ...app,
-      id: Number(app.siteNumber || index + 1),
+      id: index + 1,
+      siteNumber: index + 1,
       section: 'testnet',
       sectionLabel: 'Testnet',
-      slug: slugify(app.name, Number(app.siteNumber || index + 1) - 1),
+      slug: slugify(app.name, index),
       domain: getDomain(app.url),
       platform: getPlatform(app.url),
       tag: getTag(app.name),
@@ -931,8 +950,8 @@ function App() {
     })
   }, [enrichedApps, query, platform, tag])
 
-  const filteredTestnetApps = sortPinnedDappsFirst(filteredApps.filter((app) => app.section === 'testnet'))
-  const filteredCommunityApps = sortPinnedDappsFirst(filteredApps.filter((app) => app.section === 'pretestnet'))
+  const filteredTestnetApps = filteredApps.filter((app) => app.section === 'testnet')
+  const filteredCommunityApps = filteredApps.filter((app) => app.section === 'pretestnet')
   const activeApps = activeSection === 'testnet' ? filteredTestnetApps : filteredCommunityApps
 
   const sectionTabs = [

@@ -743,9 +743,9 @@ function App() {
   ]
 
   const totalDapps = testnetApps.length + communityApps.length
-  const totalBuilders = new Set(enrichedApps
-    .map((app) => (app.builderUrl || app.builderHandle || app.builder || '').trim().toLowerCase())
-    .filter(Boolean)).size
+  const totalBuilders = enrichedApps
+    .map((app) => (app.builderUrl || app.builderHandle || app.builder || '').trim())
+    .filter(Boolean).length
 
   const statCards = [
     { label: 'Official Testnet', value: testnetApps.length },

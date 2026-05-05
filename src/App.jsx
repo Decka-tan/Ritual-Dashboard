@@ -875,8 +875,22 @@ function App() {
   }, [officialApps])
 
   const communityApps = useMemo(() => {
-    const sourceApps = approvedApps.length ? approvedApps : preTestnetApps
-    return sourceApps.map((app, index) => ({
+    const mergedApps = [...preTestnetApps]
+    const seenUrls = new Set(preTestnetApps.map((app) => normalizeUrl(app.url).toLowerCase()))
+
+    approvedApps.forEach((app) => {
+      const appUrl = normalizeUrl(app.url).toLowerCase()
+      if (seenUrls.has(appUrl)) {
+        const existingIndex = mergedApps.findIndex((item) => normalizeUrl(item.url).toLowerCase() === appUrl)
+        if (existingIndex >= 0) mergedApps[existingIndex] = { ...mergedApps[existingIndex], ...app }
+        return
+      }
+
+      seenUrls.add(appUrl)
+      mergedApps.push(app)
+    })
+
+    return mergedApps.map((app, index) => ({
       ...app,
       id: index + 1,
       section: 'pretestnet',

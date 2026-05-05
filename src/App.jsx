@@ -44,6 +44,18 @@ const slugify = (value, index) => `${String(index + 1).padStart(2, '0')}-${value
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '')
 
+const getBuilderIdentity = (app = {}) => {
+  const rawIdentity = app.builderUrl || app.builderHandle || app.builder || ''
+  const identity = String(rawIdentity).trim().toLowerCase()
+  if (!identity) return ''
+
+  return identity
+    .replace(/^https?:\/\/(?:www\.)?(?:vx)?twitter\.com\//, 'x.com/')
+    .replace(/^https?:\/\/(?:www\.)?x\.com\//, 'x.com/')
+    .replace(/^@/, '')
+    .replace(/\/$/, '')
+}
+
 const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms))
 
 const extractXHandle = (value = '') => {
@@ -743,9 +755,9 @@ function App() {
   ]
 
   const totalDapps = testnetApps.length + communityApps.length
-  const totalBuilders = enrichedApps
-    .map((app) => (app.builderUrl || app.builderHandle || app.builder || '').trim())
-    .filter(Boolean).length
+  const totalBuilders = new Set(enrichedApps
+    .map(getBuilderIdentity)
+    .filter(Boolean)).size
 
   const statCards = [
     { label: 'Official Testnet', value: testnetApps.length },

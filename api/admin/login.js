@@ -7,6 +7,11 @@ export default async function handler(req, res) {
       return
     }
 
+    if (!ADMIN_PASSWORD) {
+      sendJson(res, 500, { error: 'ADMIN_PASSWORD is not configured' })
+      return
+    }
+
     const body = await readBody(req)
     if (body.password !== ADMIN_PASSWORD) {
       sendJson(res, 401, { error: 'Wrong password' })

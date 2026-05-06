@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react'
-import Hls from 'hls.js'
 
 const HERO_VIDEO_URL = 'https://stream.mux.com/Kec29dVyJgiPdtWaQtPuEiiGHkJIYQAVUJcNiIHUYeo.m3u8'
 const HERO_POSTER_URL = 'https://image.mux.com/Kec29dVyJgiPdtWaQtPuEiiGHkJIYQAVUJcNiIHUYeo/thumbnail.webp?time=1'
@@ -73,39 +72,47 @@ export function HeroBackground() {
 
     if (video.canPlayType('application/vnd.apple.mpegurl')) {
       attachNativeHls()
-    } else if (Hls.isSupported()) {
-      hls = new Hls({
-        enableWorker: true,
-        lowLatencyMode: false,
-        backBufferLength: 30,
-      })
-
-      hls.on(Hls.Events.MEDIA_ATTACHED, () => {
-        hls.loadSource(HERO_VIDEO_URL)
-      })
-
-      hls.on(Hls.Events.MANIFEST_PARSED, playVideo)
-
-      hls.on(Hls.Events.ERROR, (_event, data) => {
-        if (!data?.fatal) return
-
-        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-          hls.startLoad()
-          return
-        }
-
-        if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-          hls.recoverMediaError()
-          return
-        }
-
-        hls.destroy()
-        attachNativeHls()
-      })
-
-      hls.attachMedia(video)
     } else {
-      attachNativeHls()
+      import('hls.js/dist/hls.light.mjs')
+        .then(({ default: Hls }) => {
+          if (destroyed) return
+          if (!Hls.isSupported()) {
+            attachNativeHls()
+            return
+          }
+
+          hls = new Hls({
+            enableWorker: true,
+            lowLatencyMode: false,
+            backBufferLength: 30,
+          })
+
+          hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+            hls.loadSource(HERO_VIDEO_URL)
+          })
+
+          hls.on(Hls.Events.MANIFEST_PARSED, playVideo)
+
+          hls.on(Hls.Events.ERROR, (_event, data) => {
+            if (!data?.fatal) return
+
+            if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+              hls.startLoad()
+              return
+            }
+
+            if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+              hls.recoverMediaError()
+              return
+            }
+
+            hls.destroy()
+            attachNativeHls()
+          })
+
+          hls.attachMedia(video)
+        })
+        .catch(attachNativeHls)
     }
 
     video.addEventListener('loadedmetadata', playVideo)

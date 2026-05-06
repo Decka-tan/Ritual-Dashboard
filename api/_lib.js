@@ -1,6 +1,6 @@
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
-export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Sopmod123'
+export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || ''
 const TOKEN_SECRET = process.env.ADMIN_TOKEN_SECRET || SUPABASE_SERVICE_ROLE_KEY || ADMIN_PASSWORD
 const TOKEN_TTL_MS = 24 * 60 * 60 * 1000
 

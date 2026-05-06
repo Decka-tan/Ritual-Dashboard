@@ -1,9 +1,14 @@
-import { ADMIN_PASSWORD, createAdminToken, readBody, sendJson } from '../_lib.js'
+import { ADMIN_PASSWORD, TOKEN_TTL_MS, checkRateLimit, createAdminToken, getClientIp, readBody, sendJson } from '../_lib.js'
 
 export default async function handler(req, res) {
   try {
     if (req.method !== 'POST') {
       sendJson(res, 405, { error: 'Method not allowed' })
+      return
+    }
+
+    if (checkRateLimit(getClientIp(req), { max: 10, windowMs: 60_000 })) {
+      sendJson(res, 429, { error: 'Too many login attempts. Please wait a minute.' })
       return
     }
 
@@ -18,8 +23,9 @@ export default async function handler(req, res) {
       return
     }
 
-    sendJson(res, 200, { token: await createAdminToken() })
-  } catch (error) {
-    sendJson(res, 400, { error: error.message || 'Invalid login request' })
+    const token = await createAdminToken()
+    sendJson(res, 200, { token, expiresAt: Date.now() + TOKEN_TTL_MS })
+  } catch {
+    sendJson(res, 400, { error: 'Invalid login request' })
   }
 }

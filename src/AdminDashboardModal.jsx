@@ -4,6 +4,7 @@ import { apiRequest } from './api'
 export function AdminDashboardModal({ open = true, onClose, onApproved, page = false }) {
   const [password, setPassword] = useState('')
   const [token, setToken] = useState(() => sessionStorage.getItem('ritual-admin-token') || '')
+  const [sessionExpiresAt, setSessionExpiresAt] = useState(() => Number(sessionStorage.getItem('ritual-admin-expires') || 0))
   const [submissions, setSubmissions] = useState([])
   const [officialApps, setOfficialApps] = useState([])
   const [pretestnetApps, setPretestnetApps] = useState([])
@@ -26,7 +27,9 @@ export function AdminDashboardModal({ open = true, onClose, onApproved, page = f
       setError(error.message || 'Failed to load submissions')
       if (error.message === 'Unauthorized') {
         sessionStorage.removeItem('ritual-admin-token')
+        sessionStorage.removeItem('ritual-admin-expires')
         setToken('')
+        setSessionExpiresAt(0)
       }
     } finally {
       setLoading(false)
@@ -46,7 +49,9 @@ export function AdminDashboardModal({ open = true, onClose, onApproved, page = f
       setError(error.message || 'Failed to load official apps')
       if (error.message === 'Unauthorized') {
         sessionStorage.removeItem('ritual-admin-token')
+        sessionStorage.removeItem('ritual-admin-expires')
         setToken('')
+        setSessionExpiresAt(0)
       }
     } finally {
       setLoading(false)
@@ -66,7 +71,9 @@ export function AdminDashboardModal({ open = true, onClose, onApproved, page = f
       setError(error.message || 'Failed to load Pre-Testnet apps')
       if (error.message === 'Unauthorized') {
         sessionStorage.removeItem('ritual-admin-token')
+        sessionStorage.removeItem('ritual-admin-expires')
         setToken('')
+        setSessionExpiresAt(0)
       }
     } finally {
       setLoading(false)
@@ -93,7 +100,9 @@ export function AdminDashboardModal({ open = true, onClose, onApproved, page = f
         timeoutMs: 30000,
       })
       sessionStorage.setItem('ritual-admin-token', data.token)
+      if (data.expiresAt) sessionStorage.setItem('ritual-admin-expires', String(data.expiresAt))
       setToken(data.token)
+      setSessionExpiresAt(data.expiresAt || 0)
       setPassword('')
       await loadAdminData(data.token)
     } catch (error) {
@@ -429,6 +438,11 @@ export function AdminDashboardModal({ open = true, onClose, onApproved, page = f
           </div>
         )}
 
+        {sessionExpiresAt > 0 && sessionExpiresAt - Date.now() < 60 * 60 * 1000 && sessionExpiresAt > Date.now() && (
+          <p className="mt-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-200">
+            Session expires in less than 1 hour. Re-login to avoid being signed out mid-task.
+          </p>
+        )}
         {error && <p className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</p>}
       </section>
     </div>

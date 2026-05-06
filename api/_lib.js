@@ -2,7 +2,23 @@ const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || ''
 const TOKEN_SECRET = process.env.ADMIN_TOKEN_SECRET || SUPABASE_SERVICE_ROLE_KEY || ADMIN_PASSWORD
-const TOKEN_TTL_MS = 24 * 60 * 60 * 1000
+export const TOKEN_TTL_MS = 24 * 60 * 60 * 1000
+
+// In-memory rate limiter (per serverless instance; still effective against burst abuse)
+const _rateLimitStore = new Map()
+export function checkRateLimit(ip, { max = 10, windowMs = 60_000 } = {}) {
+  const now = Date.now()
+  let entry = _rateLimitStore.get(ip)
+  if (!entry || now > entry.resetAt) entry = { count: 0, resetAt: now + windowMs }
+  entry.count++
+  _rateLimitStore.set(ip, entry)
+  return entry.count > max
+}
+
+export function getClientIp(req) {
+  const forwarded = req.headers['x-forwarded-for']
+  return (forwarded ? forwarded.split(',')[0] : req.socket?.remoteAddress || '').trim()
+}
 
 export function sendJson(res, status, payload) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8')
@@ -18,6 +34,23 @@ export function normalizeUrl(url) {
   const value = cleanString(url, 700)
   if (!value) return ''
   return /^https?:\/\//i.test(value) ? value : `https://${value}`
+}
+
+const PRIVATE_HOSTNAME_RE = /^(localhost|0\.0\.0\.0|::1|.*\.local|.*\.internal)$/i
+const PRIVATE_IP_RE = /^(127\.|10\.|192\.168\.|169\.254\.|fc00:|fe80:|::1$)|(^172\.(1[6-9]|2\d|3[01])\.)/
+
+export function validatePublicUrl(url) {
+  const normalized = normalizeUrl(url)
+  if (!normalized) return { valid: false, error: 'URL is required' }
+  try {
+    const { hostname } = new URL(normalized)
+    if (PRIVATE_HOSTNAME_RE.test(hostname) || PRIVATE_IP_RE.test(hostname)) {
+      return { valid: false, error: 'URL must be a publicly accessible address' }
+    }
+    return { valid: true, url: normalized }
+  } catch {
+    return { valid: false, error: 'Invalid URL format' }
+  }
 }
 
 export async function readBody(req) {
@@ -164,10 +197,21 @@ function getBearerToken(req) {
   return auth.startsWith('Bearer ') ? auth.slice(7) : ''
 }
 
+function timingSafeEqual(a, b) {
+  const bufA = Buffer.from(a, 'utf8')
+  const bufB = Buffer.from(b, 'utf8')
+  if (bufA.length !== bufB.length) {
+    // Run comparison anyway to avoid length-based timing leak
+    crypto.timingSafeEqual(bufA, bufA)
+    return false
+  }
+  return crypto.timingSafeEqual(bufA, bufB)
+}
+
 export async function requireAdmin(req, res) {
   const token = getBearerToken(req)
   const [payload, signature] = token.split('.')
-  if (!payload || !signature || signature !== await hmac(payload)) {
+  if (!payload || !signature || !timingSafeEqual(signature, await hmac(payload))) {
     sendJson(res, 401, { error: 'Unauthorized' })
     return false
   }

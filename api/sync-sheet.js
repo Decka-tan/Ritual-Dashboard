@@ -2,9 +2,9 @@ import { cleanString, normalizeUrl, requireAdmin, screenshotUrlFor, sendJson, su
 
 const DEFAULT_SHEET_ID = '1-71yrtMqSRCTAvmshY2K_wDSYproX7GQFybKwkC5IFM'
 const DEFAULT_GID = '0'
-const CRON_SECRET = process.env.CRON_SECRET || process.env.ADMIN_TOKEN_SECRET || process.env.ADMIN_PASSWORD
+const CRON_SECRET = process.env.CRON_SECRET || ''
 
-function parseCsv(text) {
+export function parseCsv(text) {
   const rows = []
   let row = []
   let value = ''
@@ -64,7 +64,7 @@ function valueAt(row, index) {
   return index >= 0 ? cleanString(row[index], 900) : ''
 }
 
-function rowsToOfficialApps(rows) {
+export function rowsToOfficialApps(rows) {
   if (rows.length < 2) return []
 
   const headers = rows[0]

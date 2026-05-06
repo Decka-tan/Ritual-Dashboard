@@ -200,12 +200,14 @@ function getBearerToken(req) {
 function timingSafeEqual(a, b) {
   const bufA = Buffer.from(a, 'utf8')
   const bufB = Buffer.from(b, 'utf8')
-  if (bufA.length !== bufB.length) {
-    // Run comparison anyway to avoid length-based timing leak
-    crypto.timingSafeEqual(bufA, bufA)
-    return false
+  const maxLength = Math.max(bufA.length, bufB.length)
+  let mismatch = bufA.length ^ bufB.length
+
+  for (let i = 0; i < maxLength; i += 1) {
+    mismatch |= (bufA[i] || 0) ^ (bufB[i] || 0)
   }
-  return crypto.timingSafeEqual(bufA, bufB)
+
+  return mismatch === 0
 }
 
 export async function requireAdmin(req, res) {
